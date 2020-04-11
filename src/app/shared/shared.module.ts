@@ -26,6 +26,7 @@ import { StockComponent } from './widgets/stock/stock.component';
 import { HighchartsChartModule } from 'highcharts-angular';
 import { CardComponent } from './widgets/card/card.component';
 import { AutocompleteComponent } from './widgets/autocomplete/autocomplete.component';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { AutocompleteComponent } from './widgets/autocomplete/autocomplete.compo
     MatFormFieldModule,    
     FlexLayoutModule,
     RouterModule,
-    HighchartsChartModule
+    HighchartsChartModule,
+    HttpClientModule
   ],
   exports:[
     HeaderComponent,

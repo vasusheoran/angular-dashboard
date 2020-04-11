@@ -4,6 +4,7 @@ import { FormControl } from '@angular/forms';
 import {Observable} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
 import {Listing} from 'src/app/shared/models/listing';
+import { ConfigService } from '../../services/config.service';
 
 @Component({
   selector: 'app-widget-autocomplete',
@@ -18,21 +19,22 @@ export class AutocompleteComponent implements OnInit {
   myControl = new FormControl();
 
   options: Listing[] = [
-    {CompanyName: 'Nifty 50', listing:'asdf', Series : 'Series', SASSymbol : 'nifty_50', YahooSymbol : '^nsei'},
-    {CompanyName: 'TCS', listing:'asdf', Series : 'Series', SASSymbol : 'tcs-eq', YahooSymbol : 'tcs.ns'},
-    {CompanyName: 'Stuff', listing:'asdf', Series : 'Series', SASSymbol : 'stuff-eq', YahooSymbol : 'stuff'}
+    {CompanyName: 'Nifty 50', listing:'asdf', Series : 'Series', SASSymbol : 'nifty_50', YahooSymbol : '^nsei'}
   ];
   filteredOptions: Observable<Listing[]>;
 
-  constructor(){ }
+  constructor(private _config: ConfigService){ }
 
   ngOnInit() {
-    this.filteredOptions = this.myControl.valueChanges
-      .pipe(
-        startWith(''),
-        map(value => typeof value === 'string' ? value : value.CompanyName),
-        map(CompanyName => CompanyName ? this._filter(CompanyName) : this.options.slice())
+    this._config.fetchListings().subscribe((resp:Array<Listing>) =>{
+      this.options = resp;
+      this.filteredOptions = this.myControl.valueChanges
+        .pipe(
+          startWith(''),
+          map(value => typeof value === 'string' ? value : value.CompanyName),
+          map(CompanyName => CompanyName ? this._filter(CompanyName) : this.options.slice())
       );
+    });
   }
 
   displayFn(listing: Listing): string {
