@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Listing } from 'src/app/shared/models/listing';
+import { IListing } from 'src/app/shared/models/listing';
 import { ListingResponse } from 'src/app/shared/models/listing-response';
 
 @Component({
@@ -17,8 +17,7 @@ export class DashboardComponent implements OnInit {
     this.cardValues =  {'BI' : null, 'BJ': null, 'BK' : null, 'OP' : null};
    }
 
-  ngOnInit(): void {
-  }  
+  ngOnInit(): void {  }  
 
   setSelectedListing(event){
     this.listing = event;

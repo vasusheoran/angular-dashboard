@@ -3,8 +3,9 @@ import { Component, OnInit, Output,  } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {Observable} from 'rxjs';
 import {map, startWith} from 'rxjs/operators';
-import {Listing} from 'src/app/shared/models/listing';
+import {IListing, Listing} from 'src/app/shared/models/listing';
 import { ConfigService } from '../../services/config.service';
+import { SharedService } from '../../services/shared.service';
 
 @Component({
   selector: 'app-widget-autocomplete',
@@ -18,15 +19,16 @@ export class AutocompleteComponent implements OnInit {
   
   myControl = new FormControl();
 
-  options: Listing[] = [
+  options: IListing[] = [
     {CompanyName: 'Nifty 50', listing:'asdf', Series : 'Series', SASSymbol : 'nifty_50', YahooSymbol : '^nsei'}
   ];
-  filteredOptions: Observable<Listing[]>;
+  filteredOptions: Observable<IListing[]>;
 
-  constructor(private _config: ConfigService){ }
+  constructor(private _config: ConfigService, 
+    private _shared : SharedService){ }
 
   ngOnInit() {
-    this._config.fetchListings().subscribe((resp:Array<Listing>) =>{
+    this._config.fetchListings().subscribe((resp:Array<IListing>) =>{
       this.options = resp;
       this.filteredOptions = this.myControl.valueChanges
         .pipe(
@@ -37,17 +39,18 @@ export class AutocompleteComponent implements OnInit {
     });
   }
 
-  displayFn(listing: Listing): string {
+  displayFn(listing: IListing): string {
     return listing && listing.CompanyName ? listing.CompanyName : '';
   }
 
-  private _filter(CompanyName: string): Listing[] {
+  private _filter(CompanyName: string): IListing[] {
     const filterValue = CompanyName.toLowerCase();
 
     return this.options.filter(option => option.CompanyName.toLowerCase().indexOf(filterValue) === 0);
   }
 
-  public getLisiting(option:Listing){
+  public getLisiting(option:typeof Listing){
     this.selectedListing.emit(option);
+    this._shared.nextListing(option);
   }
 }

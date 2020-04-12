@@ -10,15 +10,10 @@
                 <button mat-button [matMenuTriggerFor]="settingsMenu">
                     <mat-icon>settings</mat-icon>
                 </button>
-                <mat-menu #settingsMenu="matMenu">
-                    <button mat-menu-item>
-                        <mat-icon>pause</mat-icon>
-                        Freeze Buy                        
-                    </button>
-                        
-                    <button mat-menu-item>
+                <mat-menu #settingsMenu="matMenu">                   
+                    <button (click)=resetIndex() mat-menu-item>
                         <mat-icon>exit_to_app</mat-icon>
-                        Finish and Exit
+                        Reset Index
                     </button>
                 </mat-menu>
             </li>

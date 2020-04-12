@@ -13,7 +13,7 @@ export class ConfigService {
 
   private fetchHistoricalDataUrl: string = 'http://localhost:5000/fetch/';
 
-  private freezeBIUrl: string = 'http://localhost:5000/freeze/';
+  private freezeBIUrl: string = 'http://localhost:5000/freeze';
 
   private fetchFrozenUrl: string = 'http://localhost:5000/fetch/freeze';
 
@@ -24,6 +24,8 @@ export class ConfigService {
   private downloadLogUrl: string = 'http://localhost:5000/download/';
 
   private uploadSymbolsUrl: string = 'http://localhost:5000/upload';
+
+  private deleteRowUrl: string = 'http://localhost:5000/delete';
 
 
   constructor(private _http: HttpClient) { }
@@ -42,8 +44,8 @@ export class ConfigService {
     return this._http.get(url).pipe(map(data => data));
   }
 
-  freezeBI(CP, HP, LP) {
-    return this._http.get(this.freezeBIUrl + CP + '/' + HP + '/' + LP).pipe(map(data => data));
+  freezeBI(data) {
+    return this._http.post(this.freezeBIUrl, data).pipe(map(data => data));
   }
 
   fetchFrozenValues() {
@@ -51,7 +53,6 @@ export class ConfigService {
   }
 
   addNewRow(ob) {
-    // NOTE: Folllow the format -- { "CP" : 7610, "HP" :8159, "LP" :7584}
     return this._http.post(this.addNewRowUrl, ob).pipe(map(data => data));
   }
 
@@ -69,5 +70,9 @@ export class ConfigService {
     const fd = new FormData;
     fd.append('file', file, file.name);
     return this._http.post(this.uploadSymbolsUrl, fd).pipe(map(data => data));
+  }
+
+  deleteRow() {
+    return this._http.post(this.deleteRowUrl, null).pipe(map(data => data));
   }
 }

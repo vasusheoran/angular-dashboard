@@ -2,7 +2,6 @@
     <div class="profile-card">
         <div class="header">
             <h2>Vasu Sheoran</h2>
-            <h4>vasusheoran92@gmail.com</h4>
         </div>
         <img src="https://material.angular.io/assets/img/examples/shiba2.jpg" alt="Shiba">
     </div>
@@ -10,15 +9,32 @@
     <mat-divider></mat-divider>
 
     <h2 matSubheader>Pages</h2>
-    
+
     <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/']">Dashboard</a>
-    <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/posts']">Posts</a>
-    
+    <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/historica-data']">Historical Data</a>
+
     <mat-divider></mat-divider>
-    
+
     <h2 matSubheader>Tools</h2>
-    
-    <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/contacts']">
+    <a (click)="openDailog('Freeze buy.', true)" routerLinkActive="list-item-active" *ngIf="toggleDashBoardTools && listing!=null" mat-list-item>
+        <mat-icon>pause</mat-icon>
+        Freeze Buy
+    </a>
+    <a routerLinkActive="list-item-active" *ngIf="toggleDashBoardTools && listing!=null" mat-list-item>
+        <mat-icon>exit_to_app</mat-icon>
+        Finish Day :: TODO
+    </a>
+    <a (click)="openDailog('Add current day.', false)" routerLinkActive="list-item-active" *ngIf="toggleHistoricDataTools && listing!=null" mat-list-item>
+        <mat-icon>library_add</mat-icon>
+        Add Current Day
+    </a>
+    <!-- <a (click)="deleteRow()" routerLinkActive="list-item-active" *ngIf="toggleHistoricDataTools && listing!=null" mat-list-item>
+        <mat-icon>library_add</mat-icon>
+        Delete Current Day
+    </a> -->
+    <!-- <app-widget-dialog></app-widget-dialog> -->
+    <!-- <app-widget-dialog></app-widget-dialog> -->
+    <!-- <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/contacts']">
         <mat-icon>import_contacts</mat-icon>
         Contacts
     </a>
@@ -26,6 +42,6 @@
     <a mat-list-item routerLinkActive="list-item-active" [routerLink]="['/contacts']">
         <mat-icon>contacts_icon</mat-icon>
         Leads
-    </a>
+    </a> -->
 
 </mat-nav-list>

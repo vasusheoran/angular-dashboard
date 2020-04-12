@@ -16,5 +16,10 @@ export class DefaultComponent implements OnInit {
 
   sideBarToggler(){
     this.sideBarOpen = !this.sideBarOpen;
+    setTimeout(() => {
+        window.dispatchEvent(
+            new Event('resize')
+        );
+    }, 300);
   }
 }

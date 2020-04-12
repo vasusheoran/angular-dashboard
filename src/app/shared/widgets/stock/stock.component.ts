@@ -2,7 +2,7 @@ import { Component, OnInit, Input, EventEmitter, OnChanges, SimpleChange, Output
 import * as Highcharts from 'highcharts/highstock';
 
 import HC_exporting from 'highcharts/modules/exporting';
-import { Listing } from '../../models/listing';
+import { IListing } from '../../models/listing';
 import { ConfigService } from '../../services/config.service';
 import { ListingResponse } from '../../models/listing-response';
 
@@ -14,7 +14,7 @@ import { ListingResponse } from '../../models/listing-response';
 export class StockComponent implements OnInit, OnChanges {
 
     @Output() updatedValueForCards:EventEmitter<any> = new EventEmitter();
-    @Input() listing: EventEmitter<Listing> = new EventEmitter();
+    @Input() listing: EventEmitter<IListing> = new EventEmitter();
 
     _chart: Highcharts.Chart;
 
@@ -50,12 +50,18 @@ export class StockComponent implements OnInit, OnChanges {
     }
 
     parseData(realTimeData: ListingResponse[]): any[] {
-        let data = []
+        realTimeData = realTimeData.filter(
+            (thing, i, arr) => arr.findIndex(t => t.Date === thing.Date) === i
+        );
+
+        let data = [];
         realTimeData.forEach(element => {
-            data.push([
-                new Date(element.Date).valueOf(),
-                element.CP
-            ]);
+            if(element.CP && element.Date){
+                data.push([
+                    new Date(element.Date).valueOf(),
+                    element.CP
+                ]);
+            }
         });
 
         if(data.length==0){
@@ -123,7 +129,7 @@ export class StockComponent implements OnInit, OnChanges {
     }
 
 
-    initChart(realTimeData=[], name:Listing) {
+    initChart(realTimeData=[], name:IListing) {
         this.chartOptions = {
             time: {
                 useUTC: false
@@ -144,6 +150,14 @@ export class StockComponent implements OnInit, OnChanges {
                     count: 5,
                     type: 'minute',
                     text: '5M'
+                },{
+                    count: 60,
+                    type: 'minute',
+                    text: '1H'
+                },{
+                    count: 420,
+                    type: 'minute',
+                    text: '7H'
                 }, {
                     type: 'all',
                     text: 'All'
@@ -171,16 +185,16 @@ export class StockComponent implements OnInit, OnChanges {
 
             series: [{
                 name: 'Close Price',
-                data: realTimeData
+                data: Object.assign([], realTimeData)
             }]
         }
         this._chart = Highcharts.stockChart('canvas', this.chartOptions);
 
-        setTimeout(() => {
-            window.dispatchEvent(
-                new Event('resize')
-            );
-        }, 300);
+        // setTimeout(() => {
+        //     window.dispatchEvent(
+        //         new Event('resize')
+        //     );
+        // }, 300);
 
         this.setScheduleForUpdatingChart();
 

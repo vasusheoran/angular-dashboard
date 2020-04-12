@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatDialogModule } from '@angular/material/dialog';
 
 
 
@@ -27,6 +28,7 @@ import { HighchartsChartModule } from 'highcharts-angular';
 import { CardComponent } from './widgets/card/card.component';
 import { AutocompleteComponent } from './widgets/autocomplete/autocomplete.component';
 import { HttpClientModule } from '@angular/common/http';
+import { DialogComponent } from './widgets/dialog/dialog.component';
 
 @NgModule({
   declarations: [
@@ -36,7 +38,8 @@ import { HttpClientModule } from '@angular/common/http';
     StockComponent,
     StockComponent,
     CardComponent,
-    AutocompleteComponent
+    AutocompleteComponent,
+    DialogComponent
   ],
   imports: [
     CommonModule,
@@ -51,7 +54,8 @@ import { HttpClientModule } from '@angular/common/http';
     MatListModule,
     FormsModule,
     ReactiveFormsModule,
-    MatFormFieldModule,    
+    MatFormFieldModule,
+    MatDialogModule,   
     FlexLayoutModule,
     RouterModule,
     HighchartsChartModule,
@@ -63,7 +67,8 @@ import { HttpClientModule } from '@angular/common/http';
     SidebarComponent,
     StockComponent,
     CardComponent,
-    AutocompleteComponent
+    AutocompleteComponent,
+    DialogComponent
   ]
 })
 export class SharedModule { }
