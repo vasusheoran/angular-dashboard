@@ -41,7 +41,6 @@ export class HistoricalDataComponent implements OnInit {
   constructor(private _config : ConfigService,
     private _route : Router,
     private _snack : MatSnackBar) { 
-      this.snackBarRef = null;
       this.dataSource = null; 
     }
 }

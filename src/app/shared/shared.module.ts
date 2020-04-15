@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -13,6 +13,9 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule } from '@angular/material/dialog';
 
+import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
+ 
+const config: SocketIoConfig = { url: 'http://localhost:5000', options: {'origins': '*'} };
 
 
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -27,8 +30,12 @@ import { StockComponent } from './widgets/stock/stock.component';
 import { HighchartsChartModule } from 'highcharts-angular';
 import { CardComponent } from './widgets/card/card.component';
 import { AutocompleteComponent } from './widgets/autocomplete/autocomplete.component';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { DialogComponent } from './widgets/dialog/dialog.component';
+import { CountdownSnackbarComponent } from './widgets/countdown-snackbar/countdown-snackbar.component';
+import { ConfigLogService, LoggingLevel } from './services/config-log.service';
+import { map, catchError } from 'rxjs/operators';
+import { of } from 'rxjs';
 
 @NgModule({
   declarations: [
@@ -39,7 +46,8 @@ import { DialogComponent } from './widgets/dialog/dialog.component';
     StockComponent,
     CardComponent,
     AutocompleteComponent,
-    DialogComponent
+    DialogComponent,
+    CountdownSnackbarComponent
   ],
   imports: [
     CommonModule,
@@ -59,7 +67,8 @@ import { DialogComponent } from './widgets/dialog/dialog.component';
     FlexLayoutModule,
     RouterModule,
     HighchartsChartModule,
-    HttpClientModule
+    HttpClientModule,
+    SocketIoModule.forRoot(config)
   ],
   exports:[
     HeaderComponent,
@@ -68,7 +77,33 @@ import { DialogComponent } from './widgets/dialog/dialog.component';
     StockComponent,
     CardComponent,
     AutocompleteComponent,
-    DialogComponent
-  ]
+    DialogComponent,    
+    CountdownSnackbarComponent
+  ],
+//   providers:[{ 
+//     provide: APP_INITIALIZER, 
+//     useFactory: loadConfig, 
+//     deps: [HttpClient, ConfigLogService], 
+//     multi: true 
+//  }]
 })
 export class SharedModule { }
+
+export function loadConfig(http: HttpClient, config: ConfigLogService): (() => Promise<boolean>) {
+  return (): Promise<boolean> => {
+    return new Promise<boolean>(resolve => {
+      http.get('./conf.json')
+        .pipe(
+          map((c: ConfigLogService) => {
+            config.loggingLevel = c.loggingLevel;
+            resolve(true);
+          }),
+          catchError(() => {
+            config.loggingLevel = LoggingLevel.Info;
+            resolve(true);
+            return of({});
+          })
+        ).subscribe();
+    });
+  };
+}

@@ -15,5 +15,12 @@ export class SharedService {
     this.listing.next(listing);
   }
 
+  private reset:BehaviorSubject<Boolean>  = new BehaviorSubject(null);
+  sharedResetListing = this.listing.asObservable();
+
+  resetListing(val){
+    this.reset.next(val);
+  }
+
   constructor() { }
 }

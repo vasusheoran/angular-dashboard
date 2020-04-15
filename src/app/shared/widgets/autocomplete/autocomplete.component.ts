@@ -6,6 +6,7 @@ import {map, startWith} from 'rxjs/operators';
 import {IListing, Listing} from 'src/app/shared/models/listing';
 import { ConfigService } from '../../services/config.service';
 import { SharedService } from '../../services/shared.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-widget-autocomplete',
@@ -25,7 +26,8 @@ export class AutocompleteComponent implements OnInit {
   filteredOptions: Observable<IListing[]>;
 
   constructor(private _config: ConfigService, 
-    private _shared : SharedService){ }
+    private _shared : SharedService,
+    private _snack : MatSnackBar){ }
 
   ngOnInit() {
     this._config.fetchListings().subscribe((resp:Array<IListing>) =>{
@@ -36,6 +38,8 @@ export class AutocompleteComponent implements OnInit {
           map(value => typeof value === 'string' ? value : value.CompanyName),
           map(CompanyName => CompanyName ? this._filter(CompanyName) : this.options.slice())
       );
+    },(err) => {
+      this._snack.open('Unable to fetch Listings. Please make sure server is running.')
     });
   }
 

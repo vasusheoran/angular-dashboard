@@ -2,8 +2,10 @@
     <app-widget-autocomplete  (selectedListing)="setSelectedListing($event)"></app-widget-autocomplete>
 </div>
 
+<!-- <button (click)="subscribeSockets()" class="mat-primary">Button</button> -->
+
 <div>
-    <app-widget-stock [listing]="listing" (updatedValueForCards)="setUpdatedCardValues($event)"></app-widget-stock>
+    <app-widget-stock [listing]="listing" [buy]="isBuyEnabled" [support]="isSupportEnabled" [sell]="isSellEnabled" [open]="isOpenEnabled" (updatedValueForCards)="setUpdatedCardValues($event)"></app-widget-stock>
 </div>
 
 <br>
@@ -12,17 +14,17 @@
 
 <br>
 
-<div fxLayout="row" fxLayoutAlign="space-between center" fxLayoutGap="20px" class="stats-cards">
-    <mat-card fxFlex="25">
+<div fxLayout="row" *ngIf="cardValues" fxLayoutAlign="space-between center" fxLayoutGap="20px" class="stats-cards">
+    <mat-card fxFlex="20" [ngClass]="cardValues.BI>cardValues.BK?'bg-red':'bg-green'" *ngIf="cardValues.BI"  (click)="isBuyEnabled = !isBuyEnabled">
         <app-widget-card label="Buy" [value]="cardValues.BI" percentage="50"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="25">
+    <mat-card fxFlex="20" class="bg-blue" *ngIf="cardValues.BJ"  (click)="isSupportEnabled = !isSupportEnabled">
         <app-widget-card label="Support" [value]="cardValues.BJ" percentage="50"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="25">
+    <mat-card fxFlex="20" [ngClass]="cardValues.BK>cardValues.BI?'bg-red':'bg-green'" *ngIf="cardValues.BK"  (click)="isSellEnabled = !isSellEnabled">
         <app-widget-card label="Sell" [value]="cardValues.BK" percentage="50"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="25">
+    <mat-card fxFlex="20" class="bg-custom" *ngIf="cardValues.BJ" (click)="isOpenEnabled = !isOpenEnabled">
         <app-widget-card label="Open" [value]="cardValues.OP" percentage="50"></app-widget-card>
     </mat-card>
 </div>

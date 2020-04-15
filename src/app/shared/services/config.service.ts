@@ -9,6 +9,8 @@ export class ConfigService {
 
   private fetchValuesUrl: string = 'http://localhost:5000/fetch/value';
 
+  private fetchIndexUrl: string = 'http://localhost:5000/fetch/index';
+
   private fetchListingsUrl: string = 'http://localhost:5000/fetch/listings';
 
   private fetchHistoricalDataUrl: string = 'http://localhost:5000/fetch/';
@@ -74,5 +76,9 @@ export class ConfigService {
 
   deleteRow() {
     return this._http.post(this.deleteRowUrl, null).pipe(map(data => data));
+  }
+
+  fetchIndexIfSet(){
+    return this._http.get(this.fetchIndexUrl).pipe(map(data => data));
   }
 }

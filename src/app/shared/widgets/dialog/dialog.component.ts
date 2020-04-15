@@ -9,6 +9,7 @@ export interface DialogData {
   HP:     number;
   LP:     number;
   tempDate : Date;
+  task:string;
 }
 
 

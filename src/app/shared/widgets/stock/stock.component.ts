@@ -1,202 +1,130 @@
-import { Component, OnInit, Input, EventEmitter, OnChanges, SimpleChange, Output } from '@angular/core';
+import { Component, OnInit, Input, EventEmitter, OnChanges, SimpleChange, Output, OnDestroy } from '@angular/core';
 import * as Highcharts from 'highcharts/highstock';
 
 import HC_exporting from 'highcharts/modules/exporting';
 import { IListing } from '../../models/listing';
 import { ConfigService } from '../../services/config.service';
-import { ListingResponse } from '../../models/listing-response';
+import { IListingResponse, ListingResponse } from '../../models/listing-response';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { SharedService } from '../../services/shared.service';
+import { CountdownTimerService } from '../../services/countdown-timer.service';
+import { WebSocketsService } from '../../services/web-sockets.service';
+import { StockService } from 'src/app/share/widgets/stock/stock.service';
+
+export interface HistoricalResponse{
+    CP:number;
+    HP:number;
+    LP:number;
+    date:Date;
+}
 
 @Component({
     selector: 'app-widget-stock',
     templateUrl: './stock.component.html',
     styleUrls: ['./stock.component.css']
 })
-export class StockComponent implements OnInit, OnChanges {
+export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
     @Output() updatedValueForCards:EventEmitter<any> = new EventEmitter();
-    @Input() listing: EventEmitter<IListing> = new EventEmitter();
-
-    _chart: Highcharts.Chart;
-
-    _plotLines:{bi:{enabled:boolean, value:number},bk:{enabled:boolean, value:number},bj:{enabled:boolean, value:number}};
     
-    chartOptions: {};
-    Highcharts: typeof Highcharts = Highcharts;
-    interval: any;
+    _chart;
+    @Input() listing:IListing;
+    @Input() buy:boolean;
+    @Input() support:boolean;
+    @Input() sell:boolean;
+    @Input() open:boolean;
 
-    constructor(private _config:ConfigService) {        
-        this._plotLines = {bi:{enabled:true, value:0},bk:{enabled:false, value:0},bj:{enabled:false, value:0}};
+    isReload:boolean = false;
+
+    constructor(private _config:ConfigService,
+        private _snack : MatSnackBar,
+        private _shared : SharedService,
+        private _socket : WebSocketsService,
+        private _stockHelper : StockService ) { }
+
+    ngOnInit(): void {         
+        this._shared.resetListing(resp => {
+            if (resp){
+                this._stockHelper.destroyChart();
+            }
+        });
+
+        this._config.fetchIndexIfSet().subscribe((resp) => {
+            if(resp['status'] == 'Success'){
+                this._snack.open('Rendering chart. Please wait ...');
+                var listing:IListing = resp['listing'];
+                this._shared.nextListing(listing);
+
+                let realTimeData:Array<IListingResponse> = resp['data'];
+                let historicalData:Array<HistoricalResponse> = resp['historical_data'];
+
+                this._stockHelper.initChart(realTimeData, historicalData, listing.CompanyName);
+                
+                // var options = this._stockHelper.getChartOptions();
+                // this._chart = Highcharts.stockChart('canvas', options);
+            }else{
+                this._snack.open('Please set a Listing to view chart.');
+            }
+        });
+
+            
+        this._socket.subsribeForUpdates().subscribe(res =>{
+            var resp:ListingResponse = new ListingResponse(res);
+            if (resp.CP){
+                if(!this._stockHelper.addPoint(res)){
+                    this._snack.open("Please set the listing. Updates from server have started.")
+                };
+                var currentData = this._stockHelper.getCurrentValues();
+                if(currentData)
+                    this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'], 'OP' : currentData['CP'], 'CP' : currentData['CP']});
+            }
+        });
     }
 
-    ngOnInit(): void { }
+    emitUpdatedCardValues(currentData){
+        this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'], 'OP' : currentData['CP'], 'CP' : currentData['CP']});
+    }
+
+    ngOnDestroy(): void {
+        this._stockHelper.destroyChart();
+    }
 
     ngOnChanges(changes: import("@angular/core").SimpleChanges): void {
 
-        if (changes.listing.currentValue != null && changes.listing.currentValue['YahooSymbol'] !=null ) {
+        if (changes['listing'] && changes.listing.currentValue && changes.listing.currentValue['YahooSymbol'] !=null ) {
 
-            if (this._chart) {
-                if (this.interval != null)
-                    clearInterval(this.interval)
-                this._chart.destroy();
+            if (this._stockHelper.isSet()) {
+                this._stockHelper.destroyChart();
             }
             this._config.setListing(changes.listing.currentValue).subscribe(resp => {
-                let realTimeData:Array<ListingResponse> = resp['data'];
-                this.initChart(this.parseData(realTimeData), changes.listing.currentValue);
+                this._snack.open('Rendering chart. Please wait ...');
+                let realTimeData:Array<IListingResponse> = resp['data'];
+                let historicalData:Array<HistoricalResponse> = resp['historical_data'];
+                this._stockHelper.initChart(realTimeData, historicalData,  changes.listing.currentValue.CompanyName);
             },(err) =>{
-                console.error(err)
+                this._snack.open('Error. Unbable to fetch data.');
             });
         }
 
-    }
-
-    parseData(realTimeData: ListingResponse[]): any[] {
-        realTimeData = realTimeData.filter(
-            (thing, i, arr) => arr.findIndex(t => t.Date === thing.Date) === i
-        );
-
-        let data = [];
-        realTimeData.forEach(element => {
-            if(element.CP && element.Date){
-                data.push([
-                    new Date(element.Date).valueOf(),
-                    element.CP
-                ]);
-            }
-        });
-
-        if(data.length==0){
-            data.push([
-                new Date().valueOf(),
-                0
-            ]);
+        if(changes['buy'] && !changes.buy.isFirstChange()){
+            this._stockHelper.toggleClickableFields("buy");
+            this._snack.open('Please wait .. ');
         }
 
-        this.updateCardsData(data[data.length-1]);
-        return data;
-    }
-
-    updateCardsData(data){
-        this.updatedValueForCards.emit({'BI' : data['bi'], 'BJ': data['bj'], 'BK' : data['bk'], 'OP' : data['OP'], 'CP' : data['CP']})
-    }
-
-    updateData(){
-
-        this._config.fetchValues().subscribe((resp:ListingResponse) => {
-            if(resp == null){
-                clearInterval(this.interval);
-                console.log("Server Busy. PLease try again after some time.")
-            }
-
-            var x;
-            if(resp.Date == null || resp.Date == undefined){
-                x = new Date().valueOf();
-            }else{
-                x = new Date(resp.Date).valueOf()
-            }
-
-            this._chart.series[0].addPoint([x, resp.CP], true, false);
-            this.updateCardsData(resp);
-
-            //TODO : Pending plot lines
-            this.updatePlotLine(resp);
-        });
-
-    }
-
-    updatePlotLine(resp: ListingResponse) {
-        if(this._plotLines.bi.enabled){
-            this._chart.yAxis
-        }else{
-
+        if(changes['sell'] && !changes.sell.isFirstChange()){
+            this._stockHelper.toggleClickableFields("sell");
+            this._snack.open('Please wait .. ');
         }
-        if(this._plotLines.bj.enabled){
-            
-        }else{
 
+        if(changes['support'] && !changes.support.isFirstChange()){
+            this._stockHelper.toggleClickableFields("support");
+            this._snack.open('Please wait .. ');
         }
-        if(this._plotLines.bk.enabled){
-            
-        }else{
 
+        if(changes['open'] && !changes.open.isFirstChange()){
+            this._stockHelper.toggleClickableFields("open");
+            this._snack.open('Please wait .. ');
         }
-    }
-
-    setScheduleForUpdatingChart(){
-        let i = 2000;
-        this.interval = setInterval(() => {
-          this.updateData();
-        }, i);
-    }
-
-
-    initChart(realTimeData=[], name:IListing) {
-        this.chartOptions = {
-            time: {
-                useUTC: false
-            },
-            tooltip:{
-                formatter: function() {
-                    return '<b>' +  this.points[0].series.name+ ' : </b> ' +  Highcharts.numberFormat(this.y, 0);
-                },
-                shared: true
-            },
-
-            rangeSelector: {
-                buttons: [{
-                    count: 1,
-                    type: 'minute',
-                    text: '1M'
-                }, {
-                    count: 5,
-                    type: 'minute',
-                    text: '5M'
-                },{
-                    count: 60,
-                    type: 'minute',
-                    text: '1H'
-                },{
-                    count: 420,
-                    type: 'minute',
-                    text: '7H'
-                }, {
-                    type: 'all',
-                    text: 'All'
-                }],
-                inputEnabled: false,
-                selected: 0
-            },
-
-            title: {
-                text: name.CompanyName
-            },
-
-            exporting: {
-                enabled: false
-            },
-
-            // yAxis: {
-            //     plotLines: [{
-            //         color: 'red', // Color value
-            //         dashStyle: 'longdashdot', // Style of the plot line. Default to solid
-            //         value: 50, // Value of where the line will appear
-            //         width: 1 // Width of the line    
-            //     }]
-            // },
-
-            series: [{
-                name: 'Close Price',
-                data: Object.assign([], realTimeData)
-            }]
-        }
-        this._chart = Highcharts.stockChart('canvas', this.chartOptions);
-
-        // setTimeout(() => {
-        //     window.dispatchEvent(
-        //         new Event('resize')
-        //     );
-        // }, 300);
-
-        this.setScheduleForUpdatingChart();
 
     }
 

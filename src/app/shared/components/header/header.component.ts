@@ -40,10 +40,11 @@ export class HeaderComponent implements OnInit {
 
   resetIndex(){
 
+    // this._shared.resetListing(true);
     if(this.currentListing.YahooSymbol){
       this._config.setListing(this.currentListing, true).subscribe(resp => {
-        this._snack.open('Reset listing successfully.');
-        this._router.navigate(['/']);
+        this._shared.resetListing(true);
+        this._snack.open('Select the listing again for new data.');
       },(err) =>{
         this._snack.open('Error resetting listing.');
         this._router.navigate(['/']);

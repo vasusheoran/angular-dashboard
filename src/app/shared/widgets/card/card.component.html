@@ -1,8 +1,8 @@
-<div class="text">
+<div class="text" [ngClass]="bg?bg:'white'">
     <h4>{{ label }}</h4>
 
     <span class="total">{{ value  | number : '1.0-0'}}</span>
-
+<!-- 
     <span>
         <mat-icon color="primary">
            trending_up 
@@ -13,5 +13,5 @@
            {{ percentage }}%
     </span>
 
-    <span> of target</span>
+    <span> of target</span> -->
 </div>

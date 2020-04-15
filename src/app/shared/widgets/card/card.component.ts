@@ -10,6 +10,7 @@ export class CardComponent implements OnInit {
   @Input() label:string;
   @Input() value:number;
   @Input() percentage:string;
+  @Input() bg:string;
 
   constructor() { }
 
