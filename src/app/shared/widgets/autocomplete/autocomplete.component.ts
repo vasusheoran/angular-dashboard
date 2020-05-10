@@ -1,4 +1,4 @@
-import { EventEmitter } from '@angular/core';
+import { EventEmitter, Input } from '@angular/core';
 import { Component, OnInit, Output,  } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import {Observable} from 'rxjs';
@@ -16,7 +16,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class AutocompleteComponent implements OnInit {
 
   @Output() selectedListing:EventEmitter<any> = new EventEmitter();
-
+  @Input() date:Date;
   
   myControl = new FormControl();
 

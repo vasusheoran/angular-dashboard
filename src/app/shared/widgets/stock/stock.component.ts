@@ -10,6 +10,7 @@ import { SharedService } from '../../services/shared.service';
 import { CountdownTimerService } from '../../services/countdown-timer.service';
 import { WebSocketsService } from '../../services/web-sockets.service';
 import { StockService } from 'src/app/share/widgets/stock/stock.service';
+import { IRealTimeDataResponse } from '../../models/reat-time-response';
 
 export interface HistoricalResponse{
     CP:number;
@@ -24,6 +25,42 @@ export interface HistoricalResponse{
     styleUrls: ['./stock.component.css']
 })
 export class StockComponent implements OnInit, OnChanges, OnDestroy {
+
+    cors:string;
+
+    checkCORS(){
+        // this.cors = "http://" + this.cors;
+        this._config.checkCORS(this.cors).subscribe(resp => {
+            console.log(resp);
+        });
+    }
+
+    addDemoPoint(){
+        var cp = 9800 + Math.floor(Math.random() * 101);
+        this._stockHelper.addPoint({
+            "BX": 9826.94698018356,
+            "CP": cp,
+            "Date": null,
+            "HP": "9889.05",
+            "LP": "9731.5",
+            "OP": "9753.5",
+            "ae": 9445.404689715057,
+            "af": 9726.005726257332,
+            "ai": 9720.511452514664,
+            "bi": 9724.632157821665,
+            "bj": 9786.28884863854,
+            "bk": 9847.945539455415,
+            "cj": 9410.761790324128,
+            "frozen_values": {
+                "bi": 9724.632157821665
+            },
+            "index": "Nifty 50",
+            "q": 9951.153019816438,
+            "reset_freeze_value": false,
+            "status": "Success",
+            "u": 9398.038990925872
+        });
+    }
 
     @Output() updatedValueForCards:EventEmitter<any> = new EventEmitter();
     
@@ -48,20 +85,19 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
                 this._stockHelper.destroyChart();
             }
         });
+        this._snack.open('Rendering chart. Please wait ...');
 
         this._config.fetchIndexIfSet().subscribe((resp) => {
             if(resp['status'] == 'Success'){
-                this._snack.open('Rendering chart. Please wait ...');
                 var listing:IListing = resp['listing'];
                 this._shared.nextListing(listing);
 
-                let realTimeData:Array<IListingResponse> = resp['data'];
+                let realTimeData:Array<IRealTimeDataResponse> = resp['data'];
                 let historicalData:Array<HistoricalResponse> = resp['historical_data'];
 
                 this._stockHelper.initChart(realTimeData, historicalData, listing.CompanyName);
-                
-                // var options = this._stockHelper.getChartOptions();
-                // this._chart = Highcharts.stockChart('canvas', options);
+
+                this.emitUpdatedCardValues()
             }else{
                 this._snack.open('Please set a Listing to view chart.');
             }
@@ -74,17 +110,18 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
                 if(!this._stockHelper.addPoint(res)){
                     this._snack.open("Please set the listing. Updates from server have started.")
                 };
-                var currentData = this._stockHelper.getCurrentValues();
-                if(currentData)
-                    this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'], 'OP' : currentData['CP'], 'CP' : currentData['CP']});
+                
+                this.emitUpdatedCardValues()
             }
         });
     }
 
-    emitUpdatedCardValues(currentData){
-        this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'], 'OP' : currentData['CP'], 'CP' : currentData['CP']});
+    emitUpdatedCardValues(){
+        var currentData =  this._stockHelper.getCurrentValues()
+        this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'],
+        'CP' : currentData['CP'], 'HP' : currentData['HP'], 'LP' : currentData['LP'], 'Date' : currentData['Date']});
     }
-
+    
     ngOnDestroy(): void {
         this._stockHelper.destroyChart();
     }
@@ -93,14 +130,16 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
         if (changes['listing'] && changes.listing.currentValue && changes.listing.currentValue['YahooSymbol'] !=null ) {
 
+            this._snack.open('Rendering chart. Please wait ...');
             if (this._stockHelper.isSet()) {
                 this._stockHelper.destroyChart();
             }
             this._config.setListing(changes.listing.currentValue).subscribe(resp => {
-                this._snack.open('Rendering chart. Please wait ...');
                 let realTimeData:Array<IListingResponse> = resp['data'];
                 let historicalData:Array<HistoricalResponse> = resp['historical_data'];
                 this._stockHelper.initChart(realTimeData, historicalData,  changes.listing.currentValue.CompanyName);
+                
+                this.emitUpdatedCardValues()
             },(err) =>{
                 this._snack.open('Error. Unbable to fetch data.');
             });
@@ -108,22 +147,22 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
         if(changes['buy'] && !changes.buy.isFirstChange()){
             this._stockHelper.toggleClickableFields("buy");
-            this._snack.open('Please wait .. ');
+            // this._snack.open('Please wait .. ');
         }
 
         if(changes['sell'] && !changes.sell.isFirstChange()){
             this._stockHelper.toggleClickableFields("sell");
-            this._snack.open('Please wait .. ');
+            // this._snack.open('Please wait .. ');
         }
 
         if(changes['support'] && !changes.support.isFirstChange()){
             this._stockHelper.toggleClickableFields("support");
-            this._snack.open('Please wait .. ');
+            // this._snack.open('Please wait .. ');
         }
 
-        if(changes['open'] && !changes.open.isFirstChange()){
-            this._stockHelper.toggleClickableFields("open");
-            this._snack.open('Please wait .. ');
+        if(changes['update'] && !changes.open.isFirstChange()){
+            this._stockHelper.toggleClickableFields("update");
+            // this._snack.open('Please wait .. ');
         }
 
     }

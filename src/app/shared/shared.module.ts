@@ -15,6 +15,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
  
+// const config: SocketIoConfig = { url: 'http://192.168.99.101:5000', options: {'origins': '*'} };
 const config: SocketIoConfig = { url: 'http://localhost:5000', options: {'origins': '*'} };
 
 
@@ -33,9 +34,6 @@ import { AutocompleteComponent } from './widgets/autocomplete/autocomplete.compo
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { DialogComponent } from './widgets/dialog/dialog.component';
 import { CountdownSnackbarComponent } from './widgets/countdown-snackbar/countdown-snackbar.component';
-import { ConfigLogService, LoggingLevel } from './services/config-log.service';
-import { map, catchError } from 'rxjs/operators';
-import { of } from 'rxjs';
 
 @NgModule({
   declarations: [
@@ -79,31 +77,6 @@ import { of } from 'rxjs';
     AutocompleteComponent,
     DialogComponent,    
     CountdownSnackbarComponent
-  ],
-//   providers:[{ 
-//     provide: APP_INITIALIZER, 
-//     useFactory: loadConfig, 
-//     deps: [HttpClient, ConfigLogService], 
-//     multi: true 
-//  }]
+  ]
 })
 export class SharedModule { }
-
-export function loadConfig(http: HttpClient, config: ConfigLogService): (() => Promise<boolean>) {
-  return (): Promise<boolean> => {
-    return new Promise<boolean>(resolve => {
-      http.get('./conf.json')
-        .pipe(
-          map((c: ConfigLogService) => {
-            config.loggingLevel = c.loggingLevel;
-            resolve(true);
-          }),
-          catchError(() => {
-            config.loggingLevel = LoggingLevel.Info;
-            resolve(true);
-            return of({});
-          })
-        ).subscribe();
-    });
-  };
-}

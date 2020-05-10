@@ -16,16 +16,16 @@ export class WebSocketsService {
   // public getMessages(){
   // }
 
-  public connectToServer(){
-    this.socket.on('connect', () => { });
-  }
+  // public connectToServer(){
+  //   this.socket.on('connect', () => { });
+  // }
 
   public addMesage(message){
     this.message.next(message);
   }
 
   public subsribeForUpdates(){
-    this.socket.on('update', (message) => {
+    this.socket.on('updateui', (message) => {
       this.message.next(message);
         // observer.next(message);
     });

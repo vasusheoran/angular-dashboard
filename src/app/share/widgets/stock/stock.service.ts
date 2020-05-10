@@ -5,6 +5,7 @@ import { IListingResponse, ListingResponse } from 'src/app/shared/models/listing
 import { HistoricalResponse } from 'src/app/shared/widgets/stock/stock.component';
 import * as moment from 'moment';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { IRealTimeDataResponse, RealTimeDataResponse } from 'src/app/shared/models/reat-time-response';
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +21,7 @@ export class StockService {
  sell:boolean;
  open:boolean;
  data: any[];
+ seriesLength:number;
 
   constructor(private logger : LoggerService,
     private _snack : MatSnackBar,
@@ -36,14 +38,35 @@ export class StockService {
         this.support = !this.support 
         this._logger.logInfo("Field : " + field + " : " + this.support);
     }else if(field === "open"){
-      this.open = !this.open 
+      // TODO: Change to min hp 3
+      // this.open = !this.open 
       this._logger.logInfo("Field : " + field + " : " + this.open);
     }
+
+    var plotLines = [];
+    var plotLineWidth = 2;
+
+    if(this.buy){
+      plotLines.push({color: '#74992e', value: this.currentData.bi, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
+    }if(this.sell){
+        plotLines.push({color: '#ff0000b8', value: this.currentData.bk, width: plotLineWidth, dashStyle: 'longdashdot' }); // Red
+    }if(this.support){
+        plotLines.push({color: '#0000ff7a', value: this.currentData.bj, width: plotLineWidth, dashStyle: 'longdashdot' }); //Voilet
+    }if(this.open){
+        plotLines.push({color: '#554e2bbf', value: this.currentData.OP, width: plotLineWidth, dashStyle: 'longdashdot' }) // Custom
+    }
+
+    this._logger.logInfo("Updating plot lines.");
+    this._chart.update({yAxis: { plotLines: plotLines }}, true);
   }
 
   setChartOptions(data:any, seriesName?:string){        
     this.logger.logInfo("Setting log options to default.");
     this.chartOptions = {
+      
+      type: 'spline',
+      // animation: Highcharts.svg, // don't animate in old IE
+      marginRight: 10,
         time: {
             useUTC: false
         },
@@ -57,9 +80,6 @@ export class StockService {
 
         rangeSelector: {
             buttons: [{
-                type: 'all',
-                text: 'All'
-            },{
                 count: 1,
                 type: 'minute',
                 text: '1M'
@@ -75,27 +95,30 @@ export class StockService {
                 count: 1,
                 type: 'hour',
                 text: '1H'
-            }],
-            selected: 1,
-            inputEnabled: true
+            },{
+              type: 'all',
+              text: 'All'
+            },],
+            selected: 4,
+            inputEnabled: false
         },
         
-        plotOptions: {
-          series: {
-              dataLabels: {
-                  enabled: true,
-                  formatter: function(){
-                      if(this.series.data.length>0){
-                        var isLast = false;
-                        if(this.point.x === this.series.data[this.series.data.length -1].x && this.point.y === this.series.data[this.series.data.length -1].y) isLast = true;
-                          return isLast ? this.y : '';
-                      }else{
-                        return '';
-                      }
-                  }
-              }
-          }
-        },
+        // plotOptions: {
+        //   series: {
+        //       dataLabels: {
+        //           enabled: false,
+        //           // formatter: function(){
+        //           //     if(this.series.data.length>0){
+        //           //       var isLast = false;
+        //           //       if(this.point.x === this.series.data[this.series.data.length -1].x && this.point.y === this.series.data[this.series.data.length -1].y) isLast = true;
+        //           //         return isLast ? this.y : '';
+        //           //     }else{
+        //           //       return '';
+        //           //     }
+        //           // }
+        //       }
+        //   }
+        // },
 
         title: {
             text: seriesName
@@ -119,7 +142,20 @@ export class StockService {
 
         series: [{
             name: 'Close Price',
-            data: Object.assign([], data)
+            data: Object.assign([], data),
+            marker: {
+              enabled: true,
+              radius: 2
+            },
+            tooltip: {
+                valueDecimals: 2
+            },
+            states: {
+                hover: {
+                    lineWidthPlus: -1
+                }
+            },
+            lineWidth: 2
 
         }]
     }
@@ -137,9 +173,15 @@ export class StockService {
     return this.data;
   }
 
-  initChart(realTimeData, historicalData, name:string) {
+  initChart(realTimeData:Array<IRealTimeDataResponse>, historicalData:Array<HistoricalResponse>, name:string) {
     //TODO: Event Message for listing
+    this.seriesLength = realTimeData.length;
     this.data = this.parseData(realTimeData, historicalData)
+
+    // if(realTimeData.length >0){
+    //   this.currentData = realTimeData[0];
+    // }
+
     this.setChartOptions(this.data, name);
     this._chart = Highcharts.stockChart('canvas', this.chartOptions);
   }
@@ -172,11 +214,14 @@ export class StockService {
           // x = new Date(resp.Date).valueOf();
           x = moment(resp.Date, "M:D:YYYY H:mm:ss").valueOf();
       }
-
-      this._chart.series[0].addPoint([x, resp.CP], true, true);
+      
+      
+      this._chart.series[0].addPoint([x, resp.CP], true, false);
+      // Highcharts
+      // this._chart.series[0].setData([x, resp.CP])
+      // this._chart.series[0].selected
 
       this.updatePlotLine(resp);
-      
       this.currentData = resp;
       return true;  
     }else{
@@ -186,30 +231,35 @@ export class StockService {
 
   updatePlotLine(resp) {
     var plotLineWidth = 2;
+    var updateChart = false;
     if(this._chart){
         var plotLines = [];
         if(this.buy && this.currentData.bi != resp.bi){
-            plotLines.push({color: '#74992e', value: this.currentData.bi, width: plotLineWidth }); //Green
+          updateChart = true;
+          plotLines.push({color: '#74992e', value: this.currentData.bi, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
         }if(this.sell && this.currentData.bk != resp.bk){
-            plotLines.push({color: '#ff0000b8', value: this.currentData.bk, width: plotLineWidth }); // Red
+          updateChart = true;
+          plotLines.push({color: '#ff0000b8', value: this.currentData.bk, width: plotLineWidth, dashStyle: 'longdashdot'  }); // Red
         }if(this.support && this.currentData.bj != resp.bj){
-            plotLines.push({color: '#0000ff7a', value: this.currentData.bj, width: plotLineWidth }); //Voilet
+          updateChart = true;
+          plotLines.push({color: '#0000ff7a', value: this.currentData.bj, width: plotLineWidth, dashStyle: 'longdashdot'  }); //Voilet
         }if(this.open && this.currentData.OP != resp.OP){
-            plotLines.push({color: '#554e2bbf', value: this.currentData.OP, width: plotLineWidth }) // Custom
+          updateChart = true;
+          plotLines.push({color: '#554e2bbf', value: this.currentData.OP, width: plotLineWidth, dashStyle: 'longdashdot'  }) // Custom
         }
 
-        // if(plotLines.length >0){
+        if(updateChart){
           this._logger.logInfo("Updating plot lines.");
           this._chart.update({yAxis: { plotLines: plotLines }}, true);
-        // }
+        }
     }
   }
 
   
 
-  parseData(realTimeData: IListingResponse[], historicalData:HistoricalResponse[]): any[] {
+  parseData(realTimeData: IRealTimeDataResponse[], historicalData:HistoricalResponse[]): any[] {
     realTimeData = realTimeData.filter(
-        (thing, i, arr) => arr.findIndex(t => t.Date === thing.Date) === i
+        (thing, i, arr) => arr.findIndex(t => t._source.Date === thing._source.Date) === i
     );
     historicalData = historicalData.filter(
         (thing, i, arr) => arr.findIndex(t => t.date === thing.date) === i
@@ -217,10 +267,10 @@ export class StockService {
 
     let data = [];
     realTimeData.forEach(element => {
-        if(element.CP && element.Date){
+        if(element._source.CP && element._source.Date){
             data.push([
-                new Date(element.Date).valueOf(),
-                element.CP
+                new Date(element._source.Date).valueOf(),
+                element._source.CP
             ]);
         }
     });

@@ -7,27 +7,30 @@ import { map } from 'rxjs/operators';
 })
 export class ConfigService {
 
-  private fetchValuesUrl: string = 'http://localhost:5000/fetch/value';
+  // private baseUrl:string = "http://192.168.99.101:5000/";
+  private baseUrl:string = "http://localhost:5000/";
 
-  private fetchIndexUrl: string = 'http://localhost:5000/fetch/index';
+  private fetchValuesUrl: string = this.baseUrl  + 'fetch/value';
 
-  private fetchListingsUrl: string = 'http://localhost:5000/fetch/listings';
+  private fetchIndexUrl: string = this.baseUrl  + 'fetch/index';
 
-  private fetchHistoricalDataUrl: string = 'http://localhost:5000/fetch/';
+  private fetchListingsUrl: string = this.baseUrl  + 'fetch/listings';
 
-  private freezeBIUrl: string = 'http://localhost:5000/freeze';
+  private fetchHistoricalDataUrl: string = this.baseUrl  + 'fetch/';
 
-  private fetchFrozenUrl: string = 'http://localhost:5000/fetch/freeze';
+  private freezeBIUrl: string = this.baseUrl  + 'freeze';
 
-  private addNewRowUrl: string = 'http://localhost:5000/add';
+  private fetchFrozenUrl: string = this.baseUrl  + 'fetch/freeze';
 
-  private setIndexUrl: string = 'http://localhost:5000/set';
+  private addNewRowUrl: string = this.baseUrl  + 'add';
 
-  private downloadLogUrl: string = 'http://localhost:5000/download/';
+  private setIndexUrl: string = this.baseUrl  + 'set';
+s
+  private downloadLogUrl: string = this.baseUrl  + 'download/';
 
-  private uploadSymbolsUrl: string = 'http://localhost:5000/upload';
+  private uploadSymbolsUrl: string = this.baseUrl  + 'upload';
 
-  private deleteRowUrl: string = 'http://localhost:5000/delete';
+  private deleteRowUrl: string = this.baseUrl  + 'delete';
 
 
   constructor(private _http: HttpClient) { }
@@ -80,5 +83,9 @@ export class ConfigService {
 
   fetchIndexIfSet(){
     return this._http.get(this.fetchIndexUrl).pipe(map(data => data));
+  }
+  
+  checkCORS(url){
+    return this._http.get(url).pipe(map(data => data));
   }
 }

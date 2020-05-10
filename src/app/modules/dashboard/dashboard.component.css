@@ -1,5 +1,5 @@
 .bg-custom{
-    background-color: #554e2bbf;
+    background-color: #e976d8;
 }
 
 .bg-green{
@@ -12,4 +12,8 @@
 
 .bg-blue{
     background-color: #0000ff7a;
+}
+
+.bg-grey{
+    background-color: grey;
 }
