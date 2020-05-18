@@ -4,13 +4,14 @@ import * as Highcharts from 'highcharts/highstock';
 import HC_exporting from 'highcharts/modules/exporting';
 import { IListing } from '../../models/listing';
 import { ConfigService } from '../../services/config.service';
-import { IListingResponse, ListingResponse } from '../../models/listing-response';
+import { IUpdateResponse, UpdateResponse } from '../../models/listing-response';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { SharedService } from '../../services/shared.service';
+import { SharedService, ListingResponse } from '../../services/shared.service';
 import { CountdownTimerService } from '../../services/countdown-timer.service';
 import { WebSocketsService } from '../../services/web-sockets.service';
 import { StockService } from 'src/app/share/widgets/stock/stock.service';
 import { IRealTimeDataResponse } from '../../models/reat-time-response';
+import * as moment from 'moment';
 
 export interface HistoricalResponse{
     CP:number;
@@ -24,7 +25,7 @@ export interface HistoricalResponse{
     templateUrl: './stock.component.html',
     styleUrls: ['./stock.component.css']
 })
-export class StockComponent implements OnInit, OnChanges, OnDestroy {
+export class StockComponent implements OnInit, OnDestroy {
 
     cors:string;
 
@@ -37,39 +38,27 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
     addDemoPoint(){
         var cp = 9800 + Math.floor(Math.random() * 101);
-        this._stockHelper.addPoint({
-            "BX": 9826.94698018356,
-            "CP": cp,
-            "Date": null,
-            "HP": "9889.05",
-            "LP": "9731.5",
-            "OP": "9753.5",
-            "ae": 9445.404689715057,
-            "af": 9726.005726257332,
-            "ai": 9720.511452514664,
-            "bi": 9724.632157821665,
-            "bj": 9786.28884863854,
-            "bk": 9847.945539455415,
-            "cj": 9410.761790324128,
-            "frozen_values": {
-                "bi": 9724.632157821665
-            },
-            "index": "Nifty 50",
-            "q": 9951.153019816438,
-            "reset_freeze_value": false,
-            "status": "Success",
-            "u": 9398.038990925872
-        });
+        var date = moment(). format("M:D:YYYY H:mm:ss");
+        // this._stockHelper.addPoint({
+        //     "CP": cp,
+        //     "Date": date,
+        //     "HP": "9889.05",
+        //     "LP": "9731.5",
+        //     "bi": 9724.632157821665,
+        //     "bj": 9786.28884863854,
+        //     "bk": 9847.945539455415
+        // });
     }
 
     @Output() updatedValueForCards:EventEmitter<any> = new EventEmitter();
     
     _chart;
-    @Input() listing:IListing;
-    @Input() buy:boolean;
-    @Input() support:boolean;
-    @Input() sell:boolean;
-    @Input() open:boolean;
+    currentValues:ListingResponse;
+    listing;
+    // @Input() buy:boolean;
+    // @Input() support:boolean;
+    // @Input() sell:boolean;
+    // @Input() open:boolean;
 
     isReload:boolean = false;
 
@@ -85,86 +74,40 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
                 this._stockHelper.destroyChart();
             }
         });
-        this._snack.open('Rendering chart. Please wait ...');
-
-        this._config.fetchIndexIfSet().subscribe((resp) => {
-            if(resp['status'] == 'Success'){
-                var listing:IListing = resp['listing'];
-                this._shared.nextListing(listing);
-
-                let realTimeData:Array<IRealTimeDataResponse> = resp['data'];
-                let historicalData:Array<HistoricalResponse> = resp['historical_data'];
-
-                this._stockHelper.initChart(realTimeData, historicalData, listing.CompanyName);
-
-                this.emitUpdatedCardValues()
-            }else{
-                this._snack.open('Please set a Listing to view chart.');
-            }
+        this._socket.listen('updateui').subscribe((resp) =>{
+            // this.options.fn._shared.ne
+            this._stockHelper.addPoint(resp['stocks'], resp['dashboard']['cards']);
+            this.updatedValueForCards.emit(resp['dashboard']);
         });
 
-            
-        this._socket.subsribeForUpdates().subscribe(res =>{
-            var resp:ListingResponse = new ListingResponse(res);
-            if (resp.CP){
-                if(!this._stockHelper.addPoint(res)){
-                    this._snack.open("Please set the listing. Updates from server have started.")
-                };
-                
-                this.emitUpdatedCardValues()
-            }
+        // Subscribe to refresh
+        this._config.fetchIndexIfSet().subscribe(resp => {
+            this.listing = resp['chart']['listing'];
+            this._stockHelper.setRealTimeData(resp['chart'], resp['data']['dashboard']['cards']); 
+            this._shared.nextUpdateResponse(resp['data']['dashboard']);
+        }, (err) => {            
+            this._snack.open('Please set a Listing to view chart.');
+            // this._stockHelper.enableLoading('Please set a Listing to view chart.');
         });
-    }
 
-    emitUpdatedCardValues(){
-        var currentData =  this._stockHelper.getCurrentValues()
-        this.updatedValueForCards.emit({'BI' : currentData['bi'], 'BJ': currentData['bj'], 'BK' : currentData['bk'],
-        'CP' : currentData['CP'], 'HP' : currentData['HP'], 'LP' : currentData['LP'], 'Date' : currentData['Date']});
+        // Subscribe to 
+        this._shared.sharedListing.subscribe(resp => {
+            if(typeof resp != 'function'){
+                this.listing = resp;
+                this._config.setListing(resp).subscribe(resp => {
+                this._stockHelper.setRealTimeData(resp['chart'], resp['data']['dashboard']['cards']); 
+                this._shared.nextUpdateResponse(resp['data']['dashboard']);
+                },(err) =>{
+                    this._snack.open('Unbable to fetch data. Please set a Listing to view chart.');
+                });
+            } 
+         },(err) =>{
+             this._snack.open('Error. Unbable to fetch data.');
+         });
     }
     
     ngOnDestroy(): void {
         this._stockHelper.destroyChart();
-    }
-
-    ngOnChanges(changes: import("@angular/core").SimpleChanges): void {
-
-        if (changes['listing'] && changes.listing.currentValue && changes.listing.currentValue['YahooSymbol'] !=null ) {
-
-            this._snack.open('Rendering chart. Please wait ...');
-            if (this._stockHelper.isSet()) {
-                this._stockHelper.destroyChart();
-            }
-            this._config.setListing(changes.listing.currentValue).subscribe(resp => {
-                let realTimeData:Array<IListingResponse> = resp['data'];
-                let historicalData:Array<HistoricalResponse> = resp['historical_data'];
-                this._stockHelper.initChart(realTimeData, historicalData,  changes.listing.currentValue.CompanyName);
-                
-                this.emitUpdatedCardValues()
-            },(err) =>{
-                this._snack.open('Error. Unbable to fetch data.');
-            });
-        }
-
-        if(changes['buy'] && !changes.buy.isFirstChange()){
-            this._stockHelper.toggleClickableFields("buy");
-            // this._snack.open('Please wait .. ');
-        }
-
-        if(changes['sell'] && !changes.sell.isFirstChange()){
-            this._stockHelper.toggleClickableFields("sell");
-            // this._snack.open('Please wait .. ');
-        }
-
-        if(changes['support'] && !changes.support.isFirstChange()){
-            this._stockHelper.toggleClickableFields("support");
-            // this._snack.open('Please wait .. ');
-        }
-
-        if(changes['update'] && !changes.open.isFirstChange()){
-            this._stockHelper.toggleClickableFields("update");
-            // this._snack.open('Please wait .. ');
-        }
-
     }
 
 }

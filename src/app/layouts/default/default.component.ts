@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { WebSocketsService } from 'src/app/shared/services/web-sockets.service';
 
 @Component({
   selector: 'app-default',
@@ -9,9 +10,10 @@ export class DefaultComponent implements OnInit {
 
   sideBarOpen = true;
   
-  constructor() { }
+  constructor(private _socket:WebSocketsService) { }
 
   ngOnInit(): void {
+    // this._socket.emit('message', "hi");
   }
 
   sideBarToggler(){

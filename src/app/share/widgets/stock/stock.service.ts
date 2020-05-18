@@ -1,11 +1,16 @@
-import { Injectable, EventEmitter } from '@angular/core';
+import { Injectable, EventEmitter, OptionalDecorator } from '@angular/core';
 import * as Highcharts from 'highcharts/highstock';
 import { LoggerService } from 'src/app/shared/services/logger.service';
-import { IListingResponse, ListingResponse } from 'src/app/shared/models/listing-response';
+import { IUpdateResponse, UpdateResponse } from 'src/app/shared/models/listing-response';
 import { HistoricalResponse } from 'src/app/shared/widgets/stock/stock.component';
 import * as moment from 'moment';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { IRealTimeDataResponse, RealTimeDataResponse } from 'src/app/shared/models/reat-time-response';
+import { WebSocketsService } from 'src/app/shared/services/web-sockets.service';
+import { SharedService } from 'src/app/shared/services/shared.service';
+import { IListing } from 'src/app/shared/models/listing';
+import { ConfigService } from 'src/app/shared/services/config.service';
+import { HttpClient } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -14,68 +19,97 @@ export class StockService {
 
   _chart: Highcharts.Chart;
   chartOptions = {};
-  currentData: IListingResponse;
+  currentData: any;
 
- buy:boolean;
- support:boolean;
- sell:boolean;
- open:boolean;
+//  buy:boolean;
+//  support:boolean;
+//  sell:boolean;
+//  high:boolean;
+ plotLinesOptions:any;
+ isPlotLineEnabled:any;
  data: any[];
  seriesLength:number;
+ isRefreshRequired:boolean;
 
-  constructor(private logger : LoggerService,
-    private _snack : MatSnackBar,
-    private _logger : LoggerService) { }
+  constructor(
+    private _logger : LoggerService,
+    private _socket: WebSocketsService,
+    private _config : ConfigService) {
+      this.isPlotLineEnabled =  {'Buy' : true, 'Support' : true, 'Sell' : true, 'Min_High' : true};
+      this.plotLinesOptions = {'Buy' : { 'color' : '#74992e', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
+                                'Sell' : { 'color' : '#ff0000b8', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
+                                'Support' : { 'color' : '#0000ff7a', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
+                                'Min_High' : { 'color' : '#e976d8', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'}
+                              }
+     }
 
-  toggleClickableFields(field){
-    if(field === "buy"){
-      this.buy = !this.buy 
-      this._logger.logInfo("Field : " + field + " : " + this.buy);
-    }else if(field === "sell"){
-        this.sell = !this.sell 
-        this._logger.logInfo("Field : " + field + " : " + this.sell);
-    }else if(field === "support"){
-        this.support = !this.support 
-        this._logger.logInfo("Field : " + field + " : " + this.support);
-    }else if(field === "open"){
-      // TODO: Change to min hp 3
-      // this.open = !this.open 
-      this._logger.logInfo("Field : " + field + " : " + this.open);
-    }
+  toggleClickableFields(field, isPlotLineEnabled){
+    this.isPlotLineEnabled = isPlotLineEnabled;
+    this.updatePlotLines();
+  }
+  updatePlotLines() {
 
     var plotLines = [];
     var plotLineWidth = 2;
 
-    if(this.buy){
-      plotLines.push({color: '#74992e', value: this.currentData.bi, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
-    }if(this.sell){
-        plotLines.push({color: '#ff0000b8', value: this.currentData.bk, width: plotLineWidth, dashStyle: 'longdashdot' }); // Red
-    }if(this.support){
-        plotLines.push({color: '#0000ff7a', value: this.currentData.bj, width: plotLineWidth, dashStyle: 'longdashdot' }); //Voilet
-    }if(this.open){
-        plotLines.push({color: '#554e2bbf', value: this.currentData.OP, width: plotLineWidth, dashStyle: 'longdashdot' }) // Custom
+    // plotLines.push({color: '#74992e', value: this.currentData[0]['value'], width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
+    if(this.isPlotLineEnabled["Buy"]){
+      plotLines.push(this.plotLinesOptions['Buy'])
+      // plotLines.push({color: this.plotLinesOptions['Buy']['color'], value: this.currentData[0].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
+    }if(this.isPlotLineEnabled["Sell"]){
+      plotLines.push(this.plotLinesOptions['Sell'])
+        // plotLines.push({color: '#ff0000b8', value: this.currentData[1].value, width: plotLineWidth, dashStyle: 'longdashdot' }); // Red
+    }if(this.isPlotLineEnabled["Support"]){
+      plotLines.push(this.plotLinesOptions['Support'])
+        // plotLines.push({color: '#0000ff7a', value: this.currentData[2].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Voilet
     }
-
-    this._logger.logInfo("Updating plot lines.");
+    if(this.isPlotLineEnabled["Min_High"]){
+      plotLines.push(this.plotLinesOptions['Min_High'])
+    }
     this._chart.update({yAxis: { plotLines: plotLines }}, true);
   }
 
-  setChartOptions(data:any, seriesName?:string){        
-    this.logger.logInfo("Setting log options to default.");
-    this.chartOptions = {
-      
-      type: 'spline',
-      // animation: Highcharts.svg, // don't animate in old IE
-      marginRight: 10,
-        time: {
-            useUTC: false
+
+  afterSetExtremes(e) {
+
+    // var chart = Highcharts.charts[0];
+
+    // chart.showLoading('Loading data from server...');
+    
+    console.log("start : " + e.min + ", end : " + e.max);
+    var chart = Highcharts.charts[0];
+    chart.showLoading('Loading data from server...');
+    let url = "http://localhost:5000/"  + 'data?start=' + e.min + '&end=' + e.max;
+    chart.options['fn']._http.get(url).subscribe(resp =>{
+      var data = resp['data'];
+      // chart.series[0].update({
+      //   data: data
+      // });
+      chart.series[0].setData(data, false);
+      chart.hideLoading();
+    }, (error) =>{
+      console.error(error);
+    })
+    // chart.options['fn'].fetchDataByStartAndEnd(e.min, e.max).subscribe(resp =>{
+    //   console.log(resp);
+    //   // chart.series[0].setData(data);
+    //   // chart.hideLoading();
+
+    // });
+   
+   
+  }
+
+  setChartOptions():{}{        
+    var options = {
+        scrollbar: {
+          liveRedraw: false
         },
-        // tooltip:{
-        //     formatter: function() {
-        //         var series = '<b>' +  this.points[0].series.name+ ' : </b> ' + '<span>' + Highcharts.numberFormat(this.y, 2, ",");
-        //         var date = '</span><br/><br/><span><b>Time :</b></span><span>' + moment().utc(this.x).format('LLL') + '</span>' ;
-        //         return series + date;
-        //     }
+        // type: 'spline',
+      // animation: Highcharts.svg, // don't animate in old IE
+        // marginRight: 10,
+        // time: {
+        //     useUTC: false
         // },
 
         rangeSelector: {
@@ -102,195 +136,129 @@ export class StockService {
             selected: 4,
             inputEnabled: false
         },
-        
-        // plotOptions: {
-        //   series: {
-        //       dataLabels: {
-        //           enabled: false,
-        //           // formatter: function(){
-        //           //     if(this.series.data.length>0){
-        //           //       var isLast = false;
-        //           //       if(this.point.x === this.series.data[this.series.data.length -1].x && this.point.y === this.series.data[this.series.data.length -1].y) isLast = true;
-        //           //         return isLast ? this.y : '';
-        //           //     }else{
-        //           //       return '';
-        //           //     }
-        //           // }
-        //       }
-        //   }
-        // },
 
         title: {
-            text: seriesName
+            text: ''
         },
 
         exporting: {
             enabled: false
         },
 
-        yAxis: {
-            formatter: function() {
-                return '<b>' +  this.points[0].series.name+ ' : </b> ' +  Highcharts.numberFormat(this.y, 0);
-            },
-            lineWidth: 1,
-            opposite: true,
-            labels: {
-                align: 'left',
-                x: 5
-            }
+        fn:{
+          sockets:this._socket,         
+          fetchDataByStartAndEnd: this._config.fetchDataByStartAndEnd,
         },
 
-        series: [{
-            name: 'Close Price',
-            data: Object.assign([], data),
-            marker: {
-              enabled: true,
-              radius: 2
-            },
-            tooltip: {
-                valueDecimals: 2
-            },
-            states: {
-                hover: {
-                    lineWidthPlus: -1
-                }
-            },
-            lineWidth: 2
+        chart: {
+          events: {
+              // load: function(){
+              //   this.options.fn.sockets.listen('updateui').subscribe((resp) =>{
+              //     // this.options.fn._shared.ne
+              //     console.log(resp);
 
+              //     if(this.series[0].length > 10000)
+              //       this.series[0].addPoint(resp['update'], true, true);
+              //     else
+              //       this.series[0].addPoint(resp['update']);
+              //     // this.options.fn.updatePlotLine(resp);
+              //   });
+              // }
+          },
+          zoomType: 'x'
+        },
+
+        // xAxis: {
+        //   events: {
+        //     afterSetExtremes: this.afterSetExtremes
+        //   }, 
+        //   minRange: 60 * 1000
+        // },
+
+        series: [{
+          name: 'Close',
+          data: [],
+          marker: {
+            enabled: true,
+            radius: 1
+          },
+          tooltip: {
+              valueDecimals: 2
+          },
+          states: {
+              hover: {
+                  markerRadiusPlus : 1
+              }
+          },
+          lineWidth: 1,
+          dataGrouping: {
+            enabled: true,
+            groupPixelWidth : 4
+          }
         }]
-    }
+    };
+    return options;
   }
 
   getCurrentValues(){
     return this.currentData;
   }
 
-  getChartOptions(){
-    return this.chartOptions;
+  setRealTimeData(chart, current) {   
+    var options= this.setChartOptions();
+    options['title']['text'] = chart['listing']['CompanyName'];
+    options['series'][0]['data'] = chart['data'];
+    this._chart = Highcharts.stockChart('canvas', options);
+    this.currentData = current;
+    
+    this.setCurrentData(current);
+    this.updatePlotLines();
   }
 
-  getChartData(){
-    return this.data;
-  }
+  setCurrentData(data){
 
-  initChart(realTimeData:Array<IRealTimeDataResponse>, historicalData:Array<HistoricalResponse>, name:string) {
-    //TODO: Event Message for listing
-    this.seriesLength = realTimeData.length;
-    this.data = this.parseData(realTimeData, historicalData)
+    debugger;
+    data.forEach(element => {
+      console.log(element);
+      this.plotLinesOptions[element["key"]]['value'] = element['value'];
+    });
 
-    // if(realTimeData.length >0){
-    //   this.currentData = realTimeData[0];
-    // }
-
-    this.setChartOptions(this.data, name);
-    this._chart = Highcharts.stockChart('canvas', this.chartOptions);
   }
 
   destroyChart(){
-    this._chart = null;
-    //TODO::
-    // clearInterval(this.openInterval);
+    this._chart.destroy();
   }
 
-  isSet(){
-    if(this._chart)
-      return true;
-    else
-      return false;
-  }
-
-  updateChart(options, redraw?:boolean){
-    this._chart.update(options, redraw);
-  }
-
-  addPoint(val){
-    var resp = new ListingResponse(val);
-    if(this._chart && this._chart.series && this._chart.series[0]){
-                    
-      var x;
-      if(resp.Date == null || resp.Date == undefined){
-          x = new Date().valueOf();
-      }else{
-          // x = new Date(resp.Date).valueOf();
-          x = moment(resp.Date, "M:D:YYYY H:mm:ss").valueOf();
-      }
-      
-      
-      this._chart.series[0].addPoint([x, resp.CP], true, false);
-      // Highcharts
-      // this._chart.series[0].setData([x, resp.CP])
-      // this._chart.series[0].selected
-
-      this.updatePlotLine(resp);
-      this.currentData = resp;
-      return true;  
-    }else{
-      return false;
+  addPoint(update, plotLineData){
+    if(this._chart){      
+      // if(this._chart.series[0]. > 10000)
+      this._chart.series[0].addPoint(update, true, true);
+      // else
+      // this._chart.series[0].addPoint(val);
+      // this.options.fn.updatePlotLine(resp);
+      this.setCurrentData(plotLineData);
     }
   }
 
-  updatePlotLine(resp) {
+  updatePlotLineWithResponse(resp) {
+    var plotLines= [];
     var plotLineWidth = 2;
     var updateChart = false;
-    if(this._chart){
-        var plotLines = [];
-        if(this.buy && this.currentData.bi != resp.bi){
-          updateChart = true;
-          plotLines.push({color: '#74992e', value: this.currentData.bi, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
-        }if(this.sell && this.currentData.bk != resp.bk){
-          updateChart = true;
-          plotLines.push({color: '#ff0000b8', value: this.currentData.bk, width: plotLineWidth, dashStyle: 'longdashdot'  }); // Red
-        }if(this.support && this.currentData.bj != resp.bj){
-          updateChart = true;
-          plotLines.push({color: '#0000ff7a', value: this.currentData.bj, width: plotLineWidth, dashStyle: 'longdashdot'  }); //Voilet
-        }if(this.open && this.currentData.OP != resp.OP){
-          updateChart = true;
-          plotLines.push({color: '#554e2bbf', value: this.currentData.OP, width: plotLineWidth, dashStyle: 'longdashdot'  }) // Custom
-        }
 
-        if(updateChart){
-          this._logger.logInfo("Updating plot lines.");
-          this._chart.update({yAxis: { plotLines: plotLines }}, true);
-        }
+    if(this.currentData){
+
+      if(this.isPlotLineEnabled["Buy"] && this.currentData[0].value != resp[0].value){
+        plotLines.push({color: '#74992e', value: resp[0].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
+      }if(this.isPlotLineEnabled["Sell"] && this.currentData[1].value != resp[1].value){
+          plotLines.push({color: '#ff0000b8', value: resp[1].value, width: plotLineWidth, dashStyle: 'longdashdot' }); // Red
+      }if(this.isPlotLineEnabled["Support"] && this.currentData[2].value != resp[2].value){
+          plotLines.push({color: '#0000ff7a', value: resp[2].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Voilet
+      }if(this.isPlotLineEnabled["High"] && this.currentData[3].value != resp[3].value){
+          plotLines.push({color: '#e976d8', value: resp[3].value, width: plotLineWidth, dashStyle: 'longdashdot' }) // Custom
+      }
+      this._chart.update({yAxis: { plotLines: plotLines }}, true);
     }
-  }
-
-  
-
-  parseData(realTimeData: IRealTimeDataResponse[], historicalData:HistoricalResponse[]): any[] {
-    realTimeData = realTimeData.filter(
-        (thing, i, arr) => arr.findIndex(t => t._source.Date === thing._source.Date) === i
-    );
-    historicalData = historicalData.filter(
-        (thing, i, arr) => arr.findIndex(t => t.date === thing.date) === i
-    );
-
-    let data = [];
-    realTimeData.forEach(element => {
-        if(element._source.CP && element._source.Date){
-            data.push([
-                new Date(element._source.Date).valueOf(),
-                element._source.CP
-            ]);
-        }
-    });
-
-    
-    historicalData.forEach(element => {
-        if(element.CP && element.date){
-            data.push([
-                new Date(element.date).valueOf(),
-                element.CP
-            ]);
-        }
-    });
-
-    data.sort((a, b) => {
-        return a[0] - b[0];
-
-    });
-
-    return data;
+    this.currentData = resp;
   }
 
 }

@@ -1,38 +1,34 @@
-<div>
-    <app-widget-autocomplete  (selectedListing)="setSelectedListing($event)"  [date]="cardValues.Date"></app-widget-autocomplete>
+<div fxLayout="row" fxLayoutGap="30px" class="stats-cards">
+    <app-widget-autocomplete fxFlex="50" (selectedListing)="setSelectedListing($event)"></app-widget-autocomplete>
+    <div fxFlex="50"></div>
 </div>
 
-<div fxLayout="row" *ngIf="cardValues" fxLayoutAlign="space-between center" fxLayoutGap="30px" class="stats-cards">
-    <mat-card fxFlex="10" [ngClass]="'bg-green'" *ngIf="cardValues.BI"  (click)="isBuyEnabled = !isBuyEnabled">
-        <app-widget-card label="Buy" [value]="cardValues.BI" percentage="50"></app-widget-card>
+<div fxLayout="row" *ngIf="cards" fxLayoutGap="30px" class="stats-cards">
+    <!-- fxLayoutAlign="space-between center"  -->
+    <mat-card fxFlex="10" class="bg-green" (click)="toggleEnable(cards[0], 'Buy')">
+        <app-widget-card [label]="cards[0].name" [value]="cards[0].value"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="10" class="bg-blue" *ngIf="cardValues.BJ"  (click)="isSupportEnabled = !isSupportEnabled">
-        <app-widget-card label="Support" [value]="cardValues.BJ" percentage="50"></app-widget-card>
+    <mat-card fxFlex="10" class="bg-blue" (click)="toggleEnable(cards[1], 'Support')">
+        <app-widget-card [label]="cards[1].name" [value]="cards[1].value"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="10" [ngClass]="cardValues.BK>cardValues.BI?'bg-red':'bg-custom'" *ngIf="cardValues.BK"  (click)="isSellEnabled = !isSellEnabled">
-        <app-widget-card label="Sell" [value]="cardValues.BK" percentage="50"></app-widget-card>
+    <mat-card fxFlex="10" [ngClass]="cards[2].value>cards[0].value?'bg-red':'bg-custom'"
+        (click)="toggleEnable(cards[2], 'Sell')">
+        <app-widget-card [label]="cards[2].name" [value]="cards[2].value"></app-widget-card>
     </mat-card>
-    <mat-card fxFlex="10" class="bg-custom" *ngIf="cardValues.BJ" (click)="isOpenEnabled = !isOpenEnabled">
-        <app-widget-card label="Min HP : TODO" [value]="" percentage="50"></app-widget-card>
+    <mat-card fxFlex="10" class="bg-custom" (click)="toggleEnable(cards[3], 'Min_High')">
+        <app-widget-card [label]="cards[3].name" [value]="cards[3].value"></app-widget-card>
     </mat-card>
     
-    <mat-card fxFlex="10" class="bg-grey" *ngIf="cardValues.CP">
-        <app-widget-card label="Close" [value]="cardValues.CP" ></app-widget-card>
-    </mat-card>
-    <mat-card fxFlex="10" class="bg-grey" *ngIf="cardValues.HP">
-        <app-widget-card label="High" [value]="cardValues.HP" ></app-widget-card>
-    </mat-card>
-    <mat-card fxFlex="10" class="bg-grey" *ngIf="cardValues.LP">
-        <app-widget-card label="Low" [value]="cardValues.LP" ></app-widget-card>
+    <mat-card fxFlex="50" (click)="toggleEnable(cards[3], 'High')">
+        <app-widget-card ></app-widget-card>
     </mat-card>
 </div>
 
-<br>
-
+<br *ngIf="cards">
 <mat-divider></mat-divider>
-
-<div>
-    <app-widget-stock [listing]="listing" [buy]="isBuyEnabled" [support]="isSupportEnabled" [sell]="isSellEnabled" [open]="isOpenEnabled" (updatedValueForCards)="setUpdatedCardValues($event)"></app-widget-stock>
-</div>
-
 <br>
+<div fxLayout="row" fxLayoutGap="30px"  fxLayoutAlign="space-between center" class="stats-cards">
+    <mat-card fxFlex="100">
+        <app-widget-stock></app-widget-stock>
+    </mat-card>
+</div>

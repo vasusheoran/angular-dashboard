@@ -1,11 +1,20 @@
-<form class="example-form">
+<!-- <form class="example-form">
   <mat-form-field class="example-full-width">
     <input type="text" matInput [formControl]="myControl" [matAutocomplete]="auto">
     
     <mat-placeholder class="placeholder">Search Stock Listings</mat-placeholder>
-    <!-- <button mat-button matSuffix mat-icon-button aria-label="Clear" (click)="myControl.setValue()">
-      <mat-icon>close</mat-icon>
-    </button> -->
+    <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn"  (optionSelected)='getLisiting($event.option.value)'>
+      <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+        {{option.name}}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
+</form> -->
+
+<form class="example-form">
+  <mat-form-field class="example-full-width">
+    <mat-label>Stock Listings</mat-label>
+    <input type="text" matInput [formControl]="myControl" [matAutocomplete]="auto">
     <mat-autocomplete #auto="matAutocomplete" [displayWith]="displayFn"  (optionSelected)='getLisiting($event.option.value)'>
       <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
         {{option.CompanyName}}

@@ -2,6 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 
+interface StringConstructor {
+  format: (formatString: string, ...replacement: any[]) => string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -15,8 +19,14 @@ export class ConfigService {
   private fetchIndexUrl: string = this.baseUrl  + 'fetch/index';
 
   private fetchListingsUrl: string = this.baseUrl  + 'fetch/listings';
+  
+  // private fetchHistoricalDataUrl(page, url):string
+  // {
+  //     let query = this.baseUrl  + 'fetch/{0}/{1}';
+  //     return query;
+  // }
 
-  private fetchHistoricalDataUrl: string = this.baseUrl  + 'fetch/';
+  private fetchHistoricalDataUrl:string = this.baseUrl  + 'fetch/';
 
   private freezeBIUrl: string = this.baseUrl  + 'freeze';
 
@@ -25,12 +35,20 @@ export class ConfigService {
   private addNewRowUrl: string = this.baseUrl  + 'add';
 
   private setIndexUrl: string = this.baseUrl  + 'set';
-s
+
+  private resetIndexUrl: string = this.baseUrl  + 'reset';
+
   private downloadLogUrl: string = this.baseUrl  + 'download/';
 
   private uploadSymbolsUrl: string = this.baseUrl  + 'upload';
 
   private deleteRowUrl: string = this.baseUrl  + 'delete';
+
+  private fetchDataByStartAndEndUrl(start:string, end:string):string
+  {
+      let query = this.baseUrl  + 'data?start={0}&end={1}';
+      return query;
+  }
 
 
   constructor(private _http: HttpClient) { }
@@ -40,12 +58,11 @@ s
   }
 
   fetchListings() {
-    return this._http.get(this.fetchListingsUrl).pipe(map(data => data));
+    return this._http.get(this.fetchListingsUrl);
   }
 
   fetchHistoricalData(page, size) {
-    // TODO: Implenent Paging here
-    const url = this.fetchHistoricalDataUrl + page + '/' + size;
+    const url = this.fetchHistoricalDataUrl + '/' + page + '/' + size;
     return this._http.get(url).pipe(map(data => data));
   }
 
@@ -61,10 +78,12 @@ s
     return this._http.post(this.addNewRowUrl, ob).pipe(map(data => data));
   }
 
-  setListing(selectedOption, reset = false) {
-    let url = this.setIndexUrl;
-    selectedOption['reset'] = reset;
-    return this._http.post(url, selectedOption).pipe(map(data => data));
+  setListing(selectedOption) {
+    return this._http.post(this.setIndexUrl, selectedOption).pipe(map(data => data));
+  }
+
+  resetListing(options) {
+    return this._http.post(this.resetIndexUrl, options).pipe(map(data => data));
   }
 
   downloadLogs(num) {
@@ -86,6 +105,12 @@ s
   }
   
   checkCORS(url){
+    return this._http.get(url).pipe(map(data => data));
+  }
+
+  fetchDataByStartAndEnd(start, end){
+    // let url = this.fetchDataByStartAndEndUrl(start, end);
+    let url = this.baseUrl  + 'data?start=' + start + '&end=' + end;
     return this._http.get(url).pipe(map(data => data));
   }
 }

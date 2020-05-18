@@ -12,11 +12,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatDialogModule } from '@angular/material/dialog';
-
-import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
  
 // const config: SocketIoConfig = { url: 'http://192.168.99.101:5000', options: {'origins': '*'} };
-const config: SocketIoConfig = { url: 'http://localhost:5000', options: {'origins': '*'} };
 
 
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -65,8 +62,7 @@ import { CountdownSnackbarComponent } from './widgets/countdown-snackbar/countdo
     FlexLayoutModule,
     RouterModule,
     HighchartsChartModule,
-    HttpClientModule,
-    SocketIoModule.forRoot(config)
+    HttpClientModule
   ],
   exports:[
     HeaderComponent,

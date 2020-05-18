@@ -20,10 +20,6 @@
         <mat-icon>pause</mat-icon>
         Freeze Buy
     </a>
-    <a routerLinkActive="list-item-active" *ngIf="toggleDashBoardTools && listing!=null" mat-list-item>
-        <mat-icon>exit_to_app</mat-icon>
-        Finish Day :: TODO
-    </a>
     <a (click)="openDailog('Add current day.', false)" routerLinkActive="list-item-active" *ngIf="toggleHistoricDataTools && listing!=null" mat-list-item>
         <mat-icon>library_add</mat-icon>
         Add Current Day

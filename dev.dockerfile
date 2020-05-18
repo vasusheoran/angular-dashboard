@@ -14,12 +14,15 @@ FROM        node:alpine as build-stage
 
 LABEL       AUTHOR="Vasu Sheoran"  
 
-RUN         mkdir -p /usr/src/app 
+RUN         mkdir -p /usr/s rc/app 
 WORKDIR     /usr/src/app
+
+COPY        package.json package-lock.json* ./
+RUN         npm i @angular/cli --no-progress --loglevel=error
+RUN         npm i --only=production --no-progress --loglevel=error
 
 COPY        . /usr/src/app
 
-EXPOSE      4200
+RUN         npm run build
 
 ENTRYPOINT  [ "ng", "serve", "--host", "0.0.0.0" ]
-# ENTRYPOINT ["npm", "start"]

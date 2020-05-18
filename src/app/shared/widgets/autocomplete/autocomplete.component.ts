@@ -8,6 +8,13 @@ import { ConfigService } from '../../services/config.service';
 import { SharedService } from '../../services/shared.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
+export interface User {
+  CompanyName: string;
+  Series: string;
+  SASSymbol: string;
+  YahooSymbol: string;
+}
+
 @Component({
   selector: 'app-widget-autocomplete',
   templateUrl: './autocomplete.component.html',
@@ -20,41 +27,40 @@ export class AutocompleteComponent implements OnInit {
   
   myControl = new FormControl();
 
-  options: IListing[] = [
-    {CompanyName: 'Nifty 50', listing:'asdf', Series : 'Series', SASSymbol : 'nifty_50', YahooSymbol : '^nsei'}
-  ];
-  filteredOptions: Observable<IListing[]>;
+  options: IListing[];
+  
+  filteredOptions: Observable<User[]>;
 
   constructor(private _config: ConfigService, 
     private _shared : SharedService,
     private _snack : MatSnackBar){ }
 
   ngOnInit() {
-    this._config.fetchListings().subscribe((resp:Array<IListing>) =>{
+    this._config.fetchListings().subscribe((resp:Array<User>) =>{
       this.options = resp;
+        
       this.filteredOptions = this.myControl.valueChanges
         .pipe(
           startWith(''),
-          map(value => typeof value === 'string' ? value : value.CompanyName),
-          map(CompanyName => CompanyName ? this._filter(CompanyName) : this.options.slice())
-      );
+          map(value => typeof value === 'string' ? value : value.name),
+          map(name => name ? this._filter(name) : this.options.slice())
+        );
     },(err) => {
       this._snack.open('Unable to fetch Listings. Please make sure server is running.')
     });
   }
 
-  displayFn(listing: IListing): string {
-    return listing && listing.CompanyName ? listing.CompanyName : '';
-  }
-
-  private _filter(CompanyName: string): IListing[] {
-    const filterValue = CompanyName.toLowerCase();
-
-    return this.options.filter(option => option.CompanyName.toLowerCase().indexOf(filterValue) === 0);
-  }
-
   public getLisiting(option:typeof Listing){
     this.selectedListing.emit(option);
     this._shared.nextListing(option);
+  }  
+
+  displayFn(user: User): string {
+    return user && user.CompanyName ? user.CompanyName : '';
+  }
+
+  private _filter(name: string): User[] {
+    const filterValue = name.toLowerCase();
+    return this.options.filter(option => option.CompanyName.toLowerCase().indexOf(filterValue) === 0);
   }
 }

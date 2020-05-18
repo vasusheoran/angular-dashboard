@@ -1,6 +1,4 @@
 export interface IListing {
-
-    listing: string;
     CompanyName: string;
     Series: string;
     SASSymbol: string;
@@ -9,17 +7,12 @@ export interface IListing {
 
 export class Listing implements IListing { 
   
-    public listing:string;
     public CompanyName: string;
     public Series:string;
     public SASSymbol:string;
     public YahooSymbol:string;
-    constructor(data) { 
-      this.listing = data['listing']
-      this.CompanyName = data['CompanyName']
-      this.Series = data['Series']
-      this.SASSymbol = data['SASSymbol']
-      this.YahooSymbol = data['YahooSymbol']
-  
-     }
+
+    constructor(data: Partial<Listing>){
+        Object.assign(this, data);
+    }
   }

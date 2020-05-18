@@ -4,7 +4,7 @@ import * as Highcharts from 'highcharts/highstock';
 import HC_exporting from 'highcharts/modules/exporting';
 import { IListing } from '../../models/listing';
 import { ConfigService } from '../../services/config.service';
-import { IListingResponse, ListingResponse } from '../../models/listing-response';
+import { IUpdateResponse, UpdateResponse } from '../../models/listing-response';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { SharedService } from '../../services/shared.service';
 import { CountdownTimerService } from '../../services/countdown-timer.service';
@@ -40,7 +40,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
     Highcharts: typeof Highcharts = Highcharts;
     interval: any;
     openInterval:any;
-    currentData: IListingResponse;
+    currentData: IUpdateResponse;
     plotLineWidth:number = 2;
     isReload:boolean = false;
     OPEN_INTERVAL_PERIOD = 900;
@@ -67,7 +67,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
             if(resp['status'] == 'Success'){
                 this.listing = resp['listing'];
 
-                let realTimeData:Array<IListingResponse> = resp['data'];
+                let realTimeData:Array<IUpdateResponse> = resp['data'];
                 let historicalData:Array<HistoricalResponse> = resp['historical_data'];
 
                 this.initChart(this.parseData(realTimeData, historicalData),  resp['listing']);                        
@@ -80,7 +80,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
             
         this._socket.subsribeForUpdates().subscribe((res) =>{
-            var resp:ListingResponse = new ListingResponse(res);
+            var resp:UpdateResponse = new UpdateResponse(res);
             if (typeof resp != "function"){
                 console.log(resp.count);
 
@@ -147,7 +147,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
             }
             this._config.setListing(changes.listing.currentValue).subscribe(resp => {
                 this._snack.open('Rendering chart. Please wait ...');
-                let realTimeData:Array<IListingResponse> = resp['data'];
+                let realTimeData:Array<IUpdateResponse> = resp['data'];
                 let historicalData:Array<HistoricalResponse> = resp['historical_data'];
                 this.initChart(this.parseData(realTimeData, historicalData),  changes.listing.currentValue);
             },(err) =>{
@@ -179,7 +179,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
     }
 
-    parseData(realTimeData: IListingResponse[], historicalData:HistoricalResponse[]): any[] {
+    parseData(realTimeData: IUpdateResponse[], historicalData:HistoricalResponse[]): any[] {
         realTimeData = realTimeData.filter(
             (thing, i, arr) => arr.findIndex(t => t.Date === thing.Date) === i
         );
@@ -223,7 +223,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
     // updateData(){
 
-    //     this._config.fetchValues().subscribe((resp:IListingResponse) => {
+    //     this._config.fetchValues().subscribe((resp:IUpdateResponse) => {
     //         if(resp == null){
     //             clearInterval(this.interval);
     //             console.log("Server Busy. PLease try again after some time.")
@@ -246,7 +246,7 @@ export class StockComponent implements OnInit, OnChanges, OnDestroy {
 
     // }
 
-    // updatePlotLine(resp: IListingResponse) {
+    // updatePlotLine(resp: IUpdateResponse) {
     //     if(this._chart){
     //         var plotLines = [];
     //         if(this.buy && this.currentData.bi != resp.bi){

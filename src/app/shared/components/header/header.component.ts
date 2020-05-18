@@ -1,7 +1,7 @@
 import { Component, OnInit, Output } from '@angular/core';
 import { EventEmitter } from '@angular/core';
 import { Router, NavigationStart } from '@angular/router';
-import { SharedService } from '../../services/shared.service';
+import { SharedService, IListingResponse } from '../../services/shared.service';
 import { Listing, IListing } from '../../models/listing';
 import { ConfigService } from '../../services/config.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -16,15 +16,16 @@ export class HeaderComponent implements OnInit {
   @Output() toggleSideBarOutput: EventEmitter<any> = new EventEmitter();
 
   currentUrl:string;
-  currentListing:Listing;
+  currentListing:any;
 
   constructor(private _router : Router,
     private _shared : SharedService,
     private _config : ConfigService,
     private _snack : MatSnackBar) {
       this.currentListing = null;
-      this._shared.sharedListing.subscribe(res => {
-        this.currentListing = new Listing(res);
+      this._shared.sharedListing.subscribe((resp) =>{
+        this.currentListing =resp;
+
       })
   }
 
@@ -39,20 +40,13 @@ export class HeaderComponent implements OnInit {
   }
 
   resetIndex(){
-
-    // this._shared.resetListing(true);
-    if(this.currentListing.YahooSymbol){
-      this._config.setListing(this.currentListing, true).subscribe(resp => {
-        this._shared.resetListing(true);
-        this._snack.open('Select the listing again for new data.');
+      this._config.resetListing(null).subscribe(resp => {
+        window.location.reload();
       },(err) =>{
         this._snack.open('Error resetting listing.');
         this._router.navigate(['/']);
       });
-    }else{
-      this._snack.open('Please set the index first.');
-      this._router.navigate(['/']);
-    }
+      
   }
 
 }
