@@ -54,6 +54,7 @@ export class StockComponent implements OnInit, OnDestroy {
     
     _chart;
     currentValues:ListingResponse;
+    isUpdated:boolean;
     listing;
     // @Input() buy:boolean;
     // @Input() support:boolean;
@@ -66,7 +67,9 @@ export class StockComponent implements OnInit, OnDestroy {
         private _snack : MatSnackBar,
         private _shared : SharedService,
         private _socket : WebSocketsService,
-        private _stockHelper : StockService ) { }
+        private _stockHelper : StockService ) { 
+            this.isUpdated = false;
+        }
 
     ngOnInit(): void {         
         this._shared.resetListing(resp => {
@@ -85,6 +88,8 @@ export class StockComponent implements OnInit, OnDestroy {
             this.listing = resp['chart']['listing'];
             this._stockHelper.setRealTimeData(resp['chart'], resp['data']['dashboard']['cards']); 
             this._shared.nextUpdateResponse(resp['data']['dashboard']);
+            this.isUpdated = true;
+            this._shared.nextListing(this.listing);
         }, (err) => {            
             this._snack.open('Please set a Listing to view chart.');
             // this._stockHelper.enableLoading('Please set a Listing to view chart.');
@@ -92,7 +97,7 @@ export class StockComponent implements OnInit, OnDestroy {
 
         // Subscribe to 
         this._shared.sharedListing.subscribe(resp => {
-            if(typeof resp != 'function'){
+            if(typeof resp != 'function' && !this.isUpdated){
                 this.listing = resp;
                 this._config.setListing(resp).subscribe(resp => {
                 this._stockHelper.setRealTimeData(resp['chart'], resp['data']['dashboard']['cards']); 

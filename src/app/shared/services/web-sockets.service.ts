@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import * as io from 'socket.io-client';
-import { BehaviorSubject, Observable, Subscriber } from 'rxjs';
-import { UpdateResponse } from '../models/listing-response';
+import { environment } from 'src/environments/environment';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -9,11 +9,12 @@ import { UpdateResponse } from '../models/listing-response';
 export class WebSocketsService {
  
   constructor() { 
-    this.socket = io(this.url);
+    this.uri = environment.apiUrl;
+    this.socket = io(this.uri);
   }
 
   socket:any;
-  readonly url:string = "ws://localhost:5000";
+  readonly uri:string = "ws://localhost:5000";
 
   
   public listen(eventName:string){

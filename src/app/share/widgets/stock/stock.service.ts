@@ -35,7 +35,7 @@ export class StockService {
     private _logger : LoggerService,
     private _socket: WebSocketsService,
     private _config : ConfigService) {
-      this.isPlotLineEnabled =  {'Buy' : true, 'Support' : true, 'Sell' : true, 'Min_High' : true};
+      this.isPlotLineEnabled =  {'Buy' : true, 'Support' : false, 'Sell' : false, 'Min_High' : false};
       this.plotLinesOptions = {'Buy' : { 'color' : '#74992e', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
                                 'Sell' : { 'color' : '#ff0000b8', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
                                 'Support' : { 'color' : '#0000ff7a', 'lineWidth' : 2, 'value' : 0, 'width': 2, dashStyle: 'longdashdot'},
@@ -205,6 +205,9 @@ export class StockService {
   }
 
   setRealTimeData(chart, current) {   
+    if (chart['data'].length ==0){
+      chart['data'] = [current];
+    }
     var options= this.setChartOptions();
     options['title']['text'] = chart['listing']['CompanyName'];
     options['series'][0]['data'] = chart['data'];
@@ -216,13 +219,9 @@ export class StockService {
   }
 
   setCurrentData(data){
-
-    debugger;
     data.forEach(element => {
-      console.log(element);
       this.plotLinesOptions[element["key"]]['value'] = element['value'];
     });
-
   }
 
   destroyChart(){
@@ -231,11 +230,11 @@ export class StockService {
 
   addPoint(update, plotLineData){
     if(this._chart){      
-      // if(this._chart.series[0]. > 10000)
-      this._chart.series[0].addPoint(update, true, true);
-      // else
-      // this._chart.series[0].addPoint(val);
-      // this.options.fn.updatePlotLine(resp);
+      if(this._chart.series[0].options['data'] > 10000){
+        this._chart.series[0].addPoint(update, true, true);
+      }
+      else
+        this._chart.series[0].addPoint(update);
       this.setCurrentData(plotLineData);
     }
   }

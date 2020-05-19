@@ -60,7 +60,8 @@ export class DashboardComponent implements OnInit {
     this._shared.sharedUpdateResponse.subscribe(resp =>{
       // debugger;
       this.cards = resp['cards'];
-      this.values = resp['values'];
+      this.values = resp['table'];
+      console.log(this.values);
     });
 
     this._socket.emit('message', "Dashboard App Default Connection.");

@@ -23,6 +23,6 @@ RUN         npm i --only=production --no-progress --loglevel=error
 
 COPY        . /usr/src/app
 
-RUN         npm run build
+RUN         ng build
 
 ENTRYPOINT  [ "ng", "serve", "--host", "0.0.0.0" ]

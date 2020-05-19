@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
 
 interface StringConstructor {
   format: (formatString: string, ...replacement: any[]) => string;
@@ -11,20 +12,13 @@ interface StringConstructor {
 })
 export class ConfigService {
 
-  // private baseUrl:string = "http://192.168.99.101:5000/";
-  private baseUrl:string = "http://localhost:5000/";
+  private baseUrl:string;
 
   private fetchValuesUrl: string = this.baseUrl  + 'fetch/value';
 
   private fetchIndexUrl: string = this.baseUrl  + 'fetch/index';
 
   private fetchListingsUrl: string = this.baseUrl  + 'fetch/listings';
-  
-  // private fetchHistoricalDataUrl(page, url):string
-  // {
-  //     let query = this.baseUrl  + 'fetch/{0}/{1}';
-  //     return query;
-  // }
 
   private fetchHistoricalDataUrl:string = this.baseUrl  + 'fetch/';
 
@@ -51,7 +45,9 @@ export class ConfigService {
   }
 
 
-  constructor(private _http: HttpClient) { }
+  constructor(private _http: HttpClient) { 
+    this.baseUrl = environment.apiUrl;
+  }
 
   fetchValues() {
     return this._http.get(this.fetchValuesUrl).pipe(map(data => data));
