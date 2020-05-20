@@ -108,9 +108,11 @@ export class StockService {
         // type: 'spline',
       // animation: Highcharts.svg, // don't animate in old IE
         // marginRight: 10,
-        // time: {
-        //     useUTC: false
-        // },
+        time: {
+            // useUTC: false,
+            timezone: 'Asia/Kolkata'
+            // timezoneOffset: 330
+        },
 
         rangeSelector: {
             buttons: [{
@@ -204,7 +206,8 @@ export class StockService {
     return this.currentData;
   }
 
-  setRealTimeData(chart, current) {   
+  setRealTimeData(chart, current) { 
+      
     if (chart['data'].length ==0){
       chart['data'] = [current];
     }
@@ -235,8 +238,8 @@ export class StockService {
       }
       else
         this._chart.series[0].addPoint(update);
-      this.setCurrentData(plotLineData);
     }
+    this.updatePlotLineWithResponse(plotLineData)
   }
 
   updatePlotLineWithResponse(resp) {
@@ -246,18 +249,18 @@ export class StockService {
 
     if(this.currentData){
 
-      if(this.isPlotLineEnabled["Buy"] && this.currentData[0].value != resp[0].value){
+      if(this.isPlotLineEnabled["Buy"] && this.plotLinesOptions['Buy'].value != resp[0].value){
         plotLines.push({color: '#74992e', value: resp[0].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Green
-      }if(this.isPlotLineEnabled["Sell"] && this.currentData[1].value != resp[1].value){
+      }if(this.isPlotLineEnabled["Sell"] && this.plotLinesOptions['Sell'].value != resp[1].value){
           plotLines.push({color: '#ff0000b8', value: resp[1].value, width: plotLineWidth, dashStyle: 'longdashdot' }); // Red
-      }if(this.isPlotLineEnabled["Support"] && this.currentData[2].value != resp[2].value){
+      }if(this.isPlotLineEnabled["Support"] && this.plotLinesOptions['Support'].value != resp[2].value){
           plotLines.push({color: '#0000ff7a', value: resp[2].value, width: plotLineWidth, dashStyle: 'longdashdot' }); //Voilet
-      }if(this.isPlotLineEnabled["High"] && this.currentData[3].value != resp[3].value){
+      }if(this.isPlotLineEnabled["Min_High"] && this.plotLinesOptions['Min_High'].value != resp[3].value){
           plotLines.push({color: '#e976d8', value: resp[3].value, width: plotLineWidth, dashStyle: 'longdashdot' }) // Custom
       }
       this._chart.update({yAxis: { plotLines: plotLines }}, true);
     }
-    this.currentData = resp;
+    this.setCurrentData(resp);
   }
 
 }

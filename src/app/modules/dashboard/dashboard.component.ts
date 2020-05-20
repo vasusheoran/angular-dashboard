@@ -61,10 +61,9 @@ export class DashboardComponent implements OnInit {
       // debugger;
       this.cards = resp['cards'];
       this.values = resp['table'];
-      console.log(this.values);
     });
 
-    this._socket.emit('message', "Dashboard App Default Connection.");
+    this._socket.emit('message', "Connected.");
   }  
 
   setSelectedListing(event){
@@ -72,13 +71,7 @@ export class DashboardComponent implements OnInit {
   }
 
   toggleEnable(card, key){
-    console.log(key);
     this.isEnabled[key] = !this.isEnabled[key];
-    // this._stockHelper.buy = this.isEnabled[key];
-    // this._stockHelper.sell = this.isEnabled[key];
-    // this._stockHelper.support = this.isEnabled[key];
-    // this._stockHelper.high = this.isEnabled[key];
-
     this._stockHelper.toggleClickableFields(key, this.isEnabled);
   }
 

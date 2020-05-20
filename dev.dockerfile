@@ -14,15 +14,18 @@ FROM        node:alpine as build-stage
 
 LABEL       AUTHOR="Vasu Sheoran"  
 
-RUN         mkdir -p /usr/s rc/app 
-WORKDIR     /usr/src/app
-
 COPY        package.json package-lock.json* ./
-RUN         npm i @angular/cli --no-progress --loglevel=error
-RUN         npm i --only=production --no-progress --loglevel=error
+## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
+RUN         npm i && mkdir /ng-app && mv ./node_modules ./ng-app
+WORKDIR     /ng-app
 
-COPY        . /usr/src/app
+COPY        . /ng-app
 
-RUN         ng build
+## Build the angular app in production mode and store the artifacts in dist folder
+# RUN         $(npm bin)/ng build --prod
+# COPY        . /ng-app
 
-ENTRYPOINT  [ "ng", "serve", "--host", "0.0.0.0" ]
+# ## Build the angular app in production mode and store the artifacts in dist folder
+# RUN         $(npm bin)/ng build --prod --output-path=dist
+
+ENTRYPOINT  [ "npm", "start", "--host", "0.0.0.0" ]

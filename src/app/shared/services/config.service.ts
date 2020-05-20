@@ -12,31 +12,30 @@ interface StringConstructor {
 })
 export class ConfigService {
 
-  private baseUrl:string;
+  private baseUrl:string = "";
 
-  private fetchValuesUrl: string = this.baseUrl  + 'fetch/value';
+  private fetchValuesUrl:string;
+  private fetchIndexUrl:string;
 
-  private fetchIndexUrl: string = this.baseUrl  + 'fetch/index';
+  private fetchListingsUrl:string;
 
-  private fetchListingsUrl: string = this.baseUrl  + 'fetch/listings';
+  private fetchHistoricalDataUrl:string;
 
-  private fetchHistoricalDataUrl:string = this.baseUrl  + 'fetch/';
+  private freezeBIUrl:string;
 
-  private freezeBIUrl: string = this.baseUrl  + 'freeze';
+  private fetchFrozenUrl:string;
 
-  private fetchFrozenUrl: string = this.baseUrl  + 'fetch/freeze';
+  private addNewRowUrl:string;
 
-  private addNewRowUrl: string = this.baseUrl  + 'add';
+  private setIndexUrl:string;
 
-  private setIndexUrl: string = this.baseUrl  + 'set';
+  private resetIndexUrl:string;
 
-  private resetIndexUrl: string = this.baseUrl  + 'reset';
+  private downloadLogUrl:string;
 
-  private downloadLogUrl: string = this.baseUrl  + 'download/';
+  private uploadSymbolsUrl:string;
 
-  private uploadSymbolsUrl: string = this.baseUrl  + 'upload';
-
-  private deleteRowUrl: string = this.baseUrl  + 'delete';
+  private deleteRowUrl:string;
 
   private fetchDataByStartAndEndUrl(start:string, end:string):string
   {
@@ -47,6 +46,19 @@ export class ConfigService {
 
   constructor(private _http: HttpClient) { 
     this.baseUrl = environment.apiUrl;
+    this.fetchValuesUrl = this.baseUrl  + 'fetch/value';  
+    this.fetchIndexUrl = this.baseUrl  + 'fetch/index';
+    this.fetchListingsUrl = this.baseUrl  + 'fetch/listings';
+    this.fetchHistoricalDataUrl = this.baseUrl  + 'fetch/';
+    this.freezeBIUrl = this.baseUrl  + 'freeze';  
+    this.fetchFrozenUrl = this.baseUrl  + 'fetch/freeze';  
+    this.addNewRowUrl = this.baseUrl  + 'add';  
+    this.setIndexUrl = this.baseUrl  + 'set';  
+    this.resetIndexUrl = this.baseUrl  + 'reset';  
+    this.downloadLogUrl = this.baseUrl  + 'download/';  
+    this.uploadSymbolsUrl = this.baseUrl  + 'upload';
+  
+    this.deleteRowUrl = this.baseUrl  + 'delete';
   }
 
   fetchValues() {

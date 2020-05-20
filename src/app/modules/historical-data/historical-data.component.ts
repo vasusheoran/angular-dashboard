@@ -15,7 +15,7 @@ export class HistoricalDataComponent implements OnInit {
 
   page:number;
   size:number;
-  displayedColumns: string[] = ['date', 'CP', 'HP', 'LP'];
+  displayedColumns: string[] = ['Date', 'CP', 'HP', 'LP'];
   dataSource:MatTableDataSource<ResponseData>;
   // dataSource = new MatTableDataSource<PeriodicElement>(ELEMENT_DATA);
 
@@ -46,7 +46,7 @@ export class HistoricalDataComponent implements OnInit {
 }
 
 export interface ResponseData {
-  date:Date;
+  Date:Date;
   CP: number;
   HP: number;
   LP: number;

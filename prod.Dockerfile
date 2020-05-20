@@ -15,19 +15,20 @@ FROM        node:alpine as build-stage
 
 LABEL       AUTHOR="Vasu Sheoran"  
 
-RUN         mkdir -p /usr/s rc/app 
-WORKDIR     /usr/src/app
-
 COPY        package.json package-lock.json* ./
-RUN         npm i @angular/cli --no-progress --loglevel=error
-RUN         npm i --only=production --no-progress --loglevel=error
+## Storing node modules on a separate layer will prevent unnecessary npm installs at each build
+RUN         npm i 
+RUN         mkdir /ng-app && mv ./node_modules ./ng-app
+WORKDIR     /ng-app
 
-COPY        . /usr/src/app
+COPY        . /ng-app
 
-RUN         npm run build -- --output-path=./dist/out
+## Build the angular app in production mode and store the artifacts in dist folder
+RUN         $(npm bin)/ng build --prod --output-path=dist
 
+### STAGE 1: Setup ###
 FROM        nginx:alpine
 
 RUN         rm -rf /usr/share/nginx/html/*
-COPY        --from=build-stage /usr/src/app/dist/out/ /usr/share/nginx/html
+COPY        --from=build-stage /ng-app/dist /usr/share/nginx/html
 CMD         ["nginx", "-g", "daemon off;"]

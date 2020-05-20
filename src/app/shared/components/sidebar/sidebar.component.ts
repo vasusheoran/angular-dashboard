@@ -7,6 +7,16 @@ import { DialogComponent } from '../../widgets/dialog/dialog.component';
 import { ConfigService } from '../../services/config.service';
 import {MatSnackBar, MatSnackBarRef} from '@angular/material/snack-bar';
 
+export interface FrozenValues{
+  data:{
+    CP:number;
+    HP:number;
+    LP:number;
+    date:Date;
+    bi:number;
+  }
+}
+
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
@@ -19,7 +29,7 @@ export class SidebarComponent implements OnInit {
   toggleHistoricDataTools:boolean;
   listing:Listing;
   snackBarRef:any;
-
+  frozenValues:FrozenValues;
   dialogData;
   
   constructor(private _router : Router,
@@ -50,13 +60,19 @@ export class SidebarComponent implements OnInit {
       if(typeof resp != 'function')
         this.listing = resp;
     });
+    this.fetchFreezeValues();
+  }
+
+  fetchFreezeValues(){
+    this._config.fetchFrozenValues().subscribe((resp) =>{
+      this.dialogData = resp['data'];
+    });
   }
 
   updateFreezeTime(result){
     this._config.freezeBI(result).subscribe((res) => {
-      this.snackBarRef = this._snack.open('Freeze buy successfully.','Close',{
-        duration:4000
-      });
+      this.snackBarRef = this._snack.open("Buy forzen successfully. Updating Values");
+      this.fetchFreezeValues();
     },(err) =>{
       this.snackBarRef = this._snack.open('Error in Freezing Buy.','Close',{
         duration:4000
@@ -94,6 +110,7 @@ export class SidebarComponent implements OnInit {
       });
     }else{
       this.dialogData['task'] = task;
+      this.dialogData['data'] = this.frozenValues;
       const dialogRef = this.dialog.open(DialogComponent, {
         width: '250px',
         data: this.dialogData
@@ -101,7 +118,8 @@ export class SidebarComponent implements OnInit {
 
       
       dialogRef.afterClosed().subscribe(result => {
-          delete result['tempDate'];
+          if(result)
+            delete result['tempDate'];
           if(result['CP'] == undefined || result['HP'] == undefined || result['LP'] == undefined){
             this.snackBarRef = this._snack.open('Error. Please set CP/HP/LP.','Close',{
               duration:4000

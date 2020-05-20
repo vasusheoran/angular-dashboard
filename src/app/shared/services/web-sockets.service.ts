@@ -14,7 +14,7 @@ export class WebSocketsService {
   }
 
   socket:any;
-  readonly uri:string = "ws://localhost:5000";
+  readonly uri:string = "";
 
   
   public listen(eventName:string){
